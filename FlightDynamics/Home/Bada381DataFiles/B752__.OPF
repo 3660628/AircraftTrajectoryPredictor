@@ -1,0 +1,61 @@
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCC B752__.OPF CCCCCCCCCCCCCCCCCCCCCCCCCCCC/
+CC                                                                    /
+CC               AIRCRAFT PERFORMANCE OPERATIONAL FILE                /
+CC                                                                    /
+CC                                                                    /
+CC      File_name: B752__.OPF                                         /
+CC                                                                    /
+CC      Creation_date: Apr 30 2002                                    /
+CC                                                                    /
+CC      Modification_date: Jan 07 2009                                /
+CC                                                                    /
+CC                                                                    /
+CC====== Actype ======================================================/
+CD   B752__         2 engines    Jet                       M          /
+CC  B757-200    with NA engines                           wake        /
+CC                                                                    /
+CC====== Mass (t) ====================================================/
+CC    reference      minimum      maximum     max payload  mass grad  /
+CD     .95200E+02   .57180E+02   .11590E+03   .21300E+02   .17748E+00 /
+CC====== Flight envelope =============================================/
+CC     VMO(KCAS)       MMO        Max.Alt       Hmax       temp grad  /
+CD     .35000E+03   .86000E+00   .42000E+05   .35478E+05   -.4395E+02 /
+CC====== Aerodynamics ================================================/
+CC Wing Area and Buffet coefficients (SIM)                            /
+CCndrst Surf(m2)     Clbo(M=0)       k          CM16                  /
+CD 5   .18135E+03   .13798E+01   .72435E+00   .00000E+00              /
+CC   Configuration characteristics                                    /
+CC n Phase  Name    Vstall(KCAS)    CD0          CD2        unused    /
+CD 1 CR   Clean     .16400E+03   .17241E-01   .48633E-01   .00000E+00 /
+CD 2 IC   Flap1     .13900E+03   .15400E-01   .51400E-01   .00000E+00 /
+CD 3 TO   Flap5     .13200E+03   .19300E-01   .48500E-01   .00000E+00 /
+CD 4 AP   Flap15    .12700E+03   .23100E-01   .47600E-01   .00000E+00 /
+CD 5 LD   Flap30    .11100E+03   .86900E-01   .42000E-01   .00000E+00 /
+CC   Spoiler                                                          /
+CD 1      RET                                                         /
+CD 2      EXT                                 .00000E+00   .00000E+00 /
+CC   Gear                                                             /
+CD 1      UP                                                          /
+CD 2      DOWN                   .16300E-01   .00000E+00   .00000E+00 /
+CC   Brakes                                                           /
+CD 1      OFF                                                         /
+CD 2      ON                                  .00000E+00   .00000E+00 /
+CC====== Engine Thrust ===============================================/
+CC         Max climb thrust coefficients (SIM)                        /
+CD     .19353E+06   .52967E+05   .49979E-10   .99624E+01   .92638E-02 /
+CC     Desc(low)    Desc(high)   Desc level   Desc(app)     Desc(ld)  /
+CD     .00000E+00   .00000E+00   .41953E+05   .54076E-01   .39025E+00 /
+CC     Desc CAS     Desc Mach     unused       unused       unused    /
+CD     .29000E+03   .78000E+00   .00000E+00   .00000E+00   .00000E+00 /
+CC====== Fuel Consumption ============================================/
+CC   Thrust Specific Fuel Consumption Coefficients                    /
+CD     .70334E+00   .91435E+03                                        /
+CC   Descent Fuel Flow Coefficients                                   /
+CD     .12967E+02   .10090E+06                                        /
+CC   Cruise Corr.    unused       unused       unused       unused    /
+CD     .10081E+01   .00000E+00   .00000E+00   .00000E+00   .00000E+00 /
+CC====== Ground ======================================================/
+CC        TOL          LDL        span         length       unused    /
+CD     .16460E+04   .14110E+04   .38050E+02   .43200E+02   .00000E+00 /
+CC====================================================================/
+FI                                                                    /
