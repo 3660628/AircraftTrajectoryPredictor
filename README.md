@@ -10,7 +10,9 @@ https://www.python.org/
 It allows to compute aircraft (jet) trajectories. 
 Three kind of outputs are generated. 
 A Google Earth KML file and two xlsx containing the vertical flight profile and the lateral profile. 
-This software needs Numpy (http://www.numpy.org/) and XlsxWriter (https://xlsxwriter.readthedocs.org/)
+This software needs :
+<br>-1) Numpy (http://www.numpy.org/)
+<br>-2) XlsxWriter (https://xlsxwriter.readthedocs.org/)
 
-See some explanations about this software (in french):
+See some explanations about this software (in french):<br>
 http://trajectoire-predict.monsite-orange.fr/
