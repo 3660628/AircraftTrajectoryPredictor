@@ -214,7 +214,7 @@ class GreatCircleRoute(Graph):
 #                                                     elapsedTimeSeconds, int(minutes), int(seconds))
 #         print self.className + strMsg                                               
         print self.className + ': final way-point= {0}'.format(intermediateWayPoint)
-
+        return endOfSimulation
        
 
 def mainOne():

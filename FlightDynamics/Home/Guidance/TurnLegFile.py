@@ -336,7 +336,7 @@ class TurnLeg(Graph):
         
         '''' print final heading  '''
         print self.className + ': final heading= {0:.2f} degrees'.format(currentHeadingDegrees)
-
+        return endOfSimulation
 
 
     def buildSimulatedArrivalTurnLeg(self, 

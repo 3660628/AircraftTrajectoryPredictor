@@ -157,81 +157,82 @@ class FlightPath(FlightPlan):
         distanceStillToFlyMeters = self.flightLengthMeters - self.finalRoute.getLengthMeters()
         print self.className + ': still to fly= {0} nautics'.format(distanceStillToFlyMeters * Meter2NauticalMiles)
 
-        turnLeg.buildTurnLeg(deltaTimeSeconds = self.deltaTimeSeconds,
+        endOfSimulation = turnLeg.buildTurnLeg(deltaTimeSeconds = self.deltaTimeSeconds,
                              elapsedTimeSeconds = tailWayPoint.getElapsedTimeSeconds(), 
                              distanceStillToFlyMeters = distanceStillToFlyMeters,
                              distanceToLastFixMeters = distanceToLastFixMeters)
         self.finalRoute.addGraph(turnLeg)
 
-        print ' ==================== end of turn leg  ==================== '
-            
-        endOfTurnLegWayPoint = self.finalRoute.getLastVertex().getWeight()
-        lastLeg = self.finalRoute.getLastEdge()
-        print self.className + ': end of turn orientation= {0:.2f} degrees'.format(lastLeg.getBearingTailHeadDegrees())
-
-        '''==================== check if anticipated turn or fly by is applicable '''
-        anticipatedTurnWayPoint = None
-        if (self.flightListIndex + 2) < len(self.fixList):
-            ''' still another fix in the list '''
-            firstAngleDegrees = endOfTurnLegWayPoint.getBearingDegreesTo(headWayPoint)
-            secondAngleDegrees = headWayPoint.getBearingDegreesTo(self.wayPointsDict[self.fixList[self.flightListIndex+2]])
-            firstAngleRadians = math.radians(firstAngleDegrees)
-            secondAngleRadians = math.radians(secondAngleDegrees)
-
-            angleDifferenceDegrees = math.degrees(math.atan2(math.sin(secondAngleRadians-firstAngleRadians), math.cos(secondAngleRadians-firstAngleRadians)))
-            print self.className + ': difference= {0:.2f} degrees'.format(angleDifferenceDegrees)
-
-            tasMetersPerSecond = self.aircraft.getCurrentTrueAirSpeedMetersSecond()
-            radiusOfTurnMeters = (tasMetersPerSecond * tasMetersPerSecond) / (9.81 * math.tan(math.radians(15.0)))
-
-            anticipatedTurnStartMeters = radiusOfTurnMeters * math.tan(math.radians((180.0 - abs(angleDifferenceDegrees))/2.0))
-            print self.className + ': anticipated turn start from end point= {0:.2f} meters'.format(anticipatedTurnStartMeters)
-        
-            if ((endOfTurnLegWayPoint.getDistanceMetersTo(headWayPoint) > (1.1 * anticipatedTurnStartMeters) 
-                and abs(angleDifferenceDegrees) > 30.)):
-                print self.className + ': Envisage anticipated Fly By turn !!!!!!!!!!!!!!!!!!!!!!!!!'
-                bearingDegrees = math.fmod ( firstAngleDegrees + 180.0 , 360.0 )
-                anticipatedTurnWayPoint = headWayPoint.getWayPointAtDistanceBearing(
-                                                                                    Name = 'Anticipated-Turn-' + headWayPoint.getName(),
-                                                                                    DistanceMeters = anticipatedTurnStartMeters,
-                                                                                    BearingDegrees = bearingDegrees)
-                headWayPoint = anticipatedTurnWayPoint
-        
-        print ' ==================== great circle ======================== '
-        greatCircle = GreatCircleRoute( initialWayPoint = endOfTurnLegWayPoint,
-                                        finalWayPoint = headWayPoint,
-                                        aircraft = self.aircraft)
-        
-        distanceToLastFixMeters = self.computeDistanceToLastFixMeters(currentPosition = endOfTurnLegWayPoint,
-                                                                      fixListIndex = headWayPointIndex)
-        print self.className + ': distance to last fix= {0} nautics'.format(distanceToLastFixMeters * Meter2NauticalMiles)
-        
-        distanceStillToFlyMeters = self.flightLengthMeters - self.finalRoute.getLengthMeters()
-        print self.className + ': still to fly= {0} nautics'.format(distanceStillToFlyMeters * Meter2NauticalMiles)
-
-
-        greatCircle.computeGreatCircle(deltaTimeSeconds = self.deltaTimeSeconds,
-                                       elapsedTimeSeconds = endOfTurnLegWayPoint.getElapsedTimeSeconds(),
-                                       distanceStillToFlyMeters = distanceStillToFlyMeters,
-                                       distanceToLastFixMeters = distanceToLastFixMeters)
-        ''' update final route '''
-        self.finalRoute.addGraph(greatCircle)
+        if (endOfSimulation == False):
+            print ' ==================== end of turn leg  ==================== '
                 
-        print ' ================== end of great circle ================== '
-        
-        finalWayPoint = self.finalRoute.getLastVertex().getWeight()
-        #print self.className + ': current end way point= ' + str(finalWayPoint) 
-        
-        lastLeg = self.finalRoute.getLastEdge()
-        finalHeadingDegrees = lastLeg.getBearingTailHeadDegrees()
-        #print self.className + ': last leg orientation= {0:.2f} degrees'.format(finalHeadingDegrees)
-
-        distanceStillToFlyMeters = self.flightLengthMeters - self.finalRoute.getLengthMeters()
-        print self.className + ': still to fly= {0:.2f} meters - still to fly= {1:.2f} nautics'.format(distanceStillToFlyMeters, distanceStillToFlyMeters *Meter2NauticalMiles)
-        ''' print the way point that has been passed right now '''
-        self.printPassedWayPoint(finalWayPoint)
+            endOfTurnLegWayPoint = self.finalRoute.getLastVertex().getWeight()
+            lastLeg = self.finalRoute.getLastEdge()
+            print self.className + ': end of turn orientation= {0:.2f} degrees'.format(lastLeg.getBearingTailHeadDegrees())
+    
+            '''==================== check if anticipated turn or fly by is applicable '''
+            anticipatedTurnWayPoint = None
+            if (self.flightListIndex + 2) < len(self.fixList):
+                ''' still another fix in the list '''
+                firstAngleDegrees = endOfTurnLegWayPoint.getBearingDegreesTo(headWayPoint)
+                secondAngleDegrees = headWayPoint.getBearingDegreesTo(self.wayPointsDict[self.fixList[self.flightListIndex+2]])
+                firstAngleRadians = math.radians(firstAngleDegrees)
+                secondAngleRadians = math.radians(secondAngleDegrees)
+    
+                angleDifferenceDegrees = math.degrees(math.atan2(math.sin(secondAngleRadians-firstAngleRadians), math.cos(secondAngleRadians-firstAngleRadians)))
+                print self.className + ': difference= {0:.2f} degrees'.format(angleDifferenceDegrees)
+    
+                tasMetersPerSecond = self.aircraft.getCurrentTrueAirSpeedMetersSecond()
+                radiusOfTurnMeters = (tasMetersPerSecond * tasMetersPerSecond) / (9.81 * math.tan(math.radians(15.0)))
+    
+                anticipatedTurnStartMeters = radiusOfTurnMeters * math.tan(math.radians((180.0 - abs(angleDifferenceDegrees))/2.0))
+                print self.className + ': anticipated turn start from end point= {0:.2f} meters'.format(anticipatedTurnStartMeters)
+            
+                if ((endOfTurnLegWayPoint.getDistanceMetersTo(headWayPoint) > (1.1 * anticipatedTurnStartMeters) 
+                    and abs(angleDifferenceDegrees) > 30.)):
+                    print self.className + ': Envisage anticipated Fly By turn !!!!!!!!!!!!!!!!!!!!!!!!!'
+                    bearingDegrees = math.fmod ( firstAngleDegrees + 180.0 , 360.0 )
+                    anticipatedTurnWayPoint = headWayPoint.getWayPointAtDistanceBearing(
+                                                                                        Name = 'Anticipated-Turn-' + headWayPoint.getName(),
+                                                                                        DistanceMeters = anticipatedTurnStartMeters,
+                                                                                        BearingDegrees = bearingDegrees)
+                    headWayPoint = anticipatedTurnWayPoint
+            
+            print ' ==================== great circle ======================== '
+            greatCircle = GreatCircleRoute( initialWayPoint = endOfTurnLegWayPoint,
+                                            finalWayPoint = headWayPoint,
+                                            aircraft = self.aircraft)
+            
+            distanceToLastFixMeters = self.computeDistanceToLastFixMeters(currentPosition = endOfTurnLegWayPoint,
+                                                                          fixListIndex = headWayPointIndex)
+            print self.className + ': distance to last fix= {0} nautics'.format(distanceToLastFixMeters * Meter2NauticalMiles)
+            
+            distanceStillToFlyMeters = self.flightLengthMeters - self.finalRoute.getLengthMeters()
+            print self.className + ': still to fly= {0} nautics'.format(distanceStillToFlyMeters * Meter2NauticalMiles)
+    
+    
+            endOfSimulation = greatCircle.computeGreatCircle(deltaTimeSeconds = self.deltaTimeSeconds,
+                                           elapsedTimeSeconds = endOfTurnLegWayPoint.getElapsedTimeSeconds(),
+                                           distanceStillToFlyMeters = distanceStillToFlyMeters,
+                                           distanceToLastFixMeters = distanceToLastFixMeters)
+            ''' update final route '''
+            self.finalRoute.addGraph(greatCircle)
+                    
+            print ' ================== end of great circle ================== '
+            
+            finalWayPoint = self.finalRoute.getLastVertex().getWeight()
+            #print self.className + ': current end way point= ' + str(finalWayPoint) 
+            
+            lastLeg = self.finalRoute.getLastEdge()
+            finalHeadingDegrees = lastLeg.getBearingTailHeadDegrees()
+            #print self.className + ': last leg orientation= {0:.2f} degrees'.format(finalHeadingDegrees)
+    
+            distanceStillToFlyMeters = self.flightLengthMeters - self.finalRoute.getLengthMeters()
+            print self.className + ': still to fly= {0:.2f} meters - still to fly= {1:.2f} nautics'.format(distanceStillToFlyMeters, distanceStillToFlyMeters *Meter2NauticalMiles)
+            ''' print the way point that has been passed right now '''
+            self.printPassedWayPoint(finalWayPoint)
         ''' return to caller '''
-        return finalHeadingDegrees, finalWayPoint.getElapsedTimeSeconds(), anticipatedTurnWayPoint
+        return endOfSimulation, finalHeadingDegrees, finalWayPoint.getElapsedTimeSeconds(), anticipatedTurnWayPoint
         
     
     def loopThroughFixList(self, 
@@ -243,7 +244,8 @@ class FlightPath(FlightPlan):
         ''' fix list does not contain departure and arrival airports '''
         self.flightListIndex = 0
         ''' loop over the fix list '''
-        while self.flightListIndex < len(self.fixList):
+        endOfSimulation = False
+        while (endOfSimulation == False) and (self.flightListIndex < len(self.fixList)):
             #print  self.className + ': initial heading degrees= ' + str(initialHeadingDegrees) + ' degrees'
                 
             ''' get the next fix '''
@@ -262,7 +264,7 @@ class FlightPath(FlightPlan):
                 headWayPoint = self.wayPointsDict[self.fixList[self.flightListIndex+1]]
                   
                 ''' turn and fly '''
-                initialHeadingDegrees , elapsedTimeSeconds , anticipatedTurnWayPoint = self.turnAndFly(
+                endOfSimulation, initialHeadingDegrees , elapsedTimeSeconds , anticipatedTurnWayPoint = self.turnAndFly(
                                                                             tailWayPoint = tailWayPoint,
                                                                             headWayPoint = headWayPoint,
                                                                             initialHeadingDegrees = initialHeadingDegrees,
@@ -271,7 +273,7 @@ class FlightPath(FlightPlan):
             self.flightListIndex += 1
             
         ''' return final heading of the last great circle '''
-        return initialHeadingDegrees
+        return endOfSimulation, initialHeadingDegrees
     
     
     def buildDeparturePhase(self):
@@ -476,11 +478,12 @@ class FlightPath(FlightPlan):
         
         #print '==================== Loop over the fix list ==================== '
         
-        initialHeadingDegrees = self.loopThroughFixList(initialHeadingDegrees = initialHeadingDegrees,
+        endOfSimulation, initialHeadingDegrees = self.loopThroughFixList(initialHeadingDegrees = initialHeadingDegrees,
                                                         elapsedTimeSeconds = initialWayPoint.getElapsedTimeSeconds())
         
-        #print '=========== build arrival phase =============='
-        self.buildArrivalPhase(initialHeadingDegrees)
+        if (endOfSimulation == False):
+            #print '=========== build arrival phase =============='
+            self.buildArrivalPhase(initialHeadingDegrees)
 
         print self.className + ' ========== delta mass status =============='
         print self.className + ': initial mass= {0:.2f} kilograms = {1:.2f} pounds'.format(self.aircraft.getAircraftInitialMassKilograms(),
