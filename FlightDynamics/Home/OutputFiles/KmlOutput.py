@@ -59,10 +59,10 @@ class KmlOutput():
               LatitudeDegrees, 
               AltitudeAboveSeaLevelMeters):
         
-        assert (isinstance(name, str))
-        assert (isinstance(LongitudeDegrees, float))
-        assert (isinstance(LatitudeDegrees, float))
-        assert (isinstance(AltitudeAboveSeaLevelMeters, float))
+        assert isinstance(name, (str, unicode))
+        assert isinstance(LongitudeDegrees, float)
+        assert isinstance(LatitudeDegrees, float)
+        assert isinstance(AltitudeAboveSeaLevelMeters, float)
         
         placemarkElement = self.kmlDoc.createElement('Placemark')
         
@@ -94,10 +94,9 @@ class KmlOutput():
         if not('Home' in os.getcwd()):
             self.FilesFolder = os.path.abspath(os.getcwd() + os.path.sep + 'Home' + os.path.sep + 'ResultsFiles')
         else:
-            ''' cas when run from Home/Tests '''
+            ''' case when run from Home/Tests '''
             self.FilesFolder = os.path.abspath(os.getcwd() + os.path.sep + '..' + os.path.sep +  'ResultsFiles')
 
- 
         filePath = os.path.abspath(self.FilesFolder + os.path.sep + self.fileName)
         print self.className + ': file path= {0}'.format(filePath)
         kmlFile = open(filePath, 'w')

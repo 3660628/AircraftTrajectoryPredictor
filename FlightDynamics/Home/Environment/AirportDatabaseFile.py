@@ -60,6 +60,7 @@ import csv
 import unittest
 
 from Home.Guidance.WayPointFile import Airport
+from Home.OutputFiles.KmlOutput import KmlOutput
 
 fieldNames = ["Airport ID", "Airport Name" , "City", "Country", "IATA/FAA", "ICAO Code",
                 "LatitudeDegrees", "LongitudeDegrees", "AltitudeFeet", "TimeZone", "DST"]
@@ -184,12 +185,32 @@ class AirportsDatabase(object):
 
 class Test_Main(unittest.TestCase):
 
+    def test_create_Country_Airports_KML(self):
+        
+        
+        airportsDb = AirportsDatabase()
+        self.assertTrue (airportsDb.read())
+        country = 'France'
+        
+        fileName =  country + '_Airports.kml'
+        kmlOutputFile = KmlOutput(fileName=fileName)
+
+        for airport in airportsDb.getAirportsFromCountry( Country = country):
+            airportName = str(airport.getName()).decode("ascii", "ignore")
+            kmlOutputFile.write(name = airportName, 
+                                LongitudeDegrees = airport.getLongitudeDegrees(),
+                                LatitudeDegrees = airport.getLatitudeDegrees(),
+                                AltitudeAboveSeaLevelMeters = airport.getAltitudeMeanSeaLevelMeters())
+        kmlOutputFile.close()
+
+
     def test_get_countries(self):
         
         airportsDb = AirportsDatabase()
         self.assertTrue (airportsDb.read())
         for country in airportsDb.getCountries():
             print country
+        
         
     def test_main(self):
     
