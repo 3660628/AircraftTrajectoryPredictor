@@ -24,7 +24,7 @@ Created on 25 janvier 2015
         You should have received a copy of the GNU General Public License
         along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-@note typical flight plan 
+@note: typical flight plan 
 
     strRoute = 'ADEP/LFBO-TOU-ALIVA-TOU37-FISTO-LMG-PD01-PD02-AMB-AMB01-AMB02-PD03-PD04-OLW11-OLW83-ADES/LFPO'
 
@@ -36,6 +36,7 @@ purpose : build a fix list from a route expressed as a sequence of names
 
 '''
 import math
+import unittest
 
 from Home.Environment.WayPointsDatabaseFile import WayPointsDatabase
 from Home.Environment.AirportDatabaseFile import AirportsDatabase
@@ -257,59 +258,73 @@ class FlightPlan(object):
             print self.className + ': WARNING - distance between {0} and {1} less than 10 Nm = {2:.2f}'.format(firstWayPoint.getName(), secondWayPoint.getName(), IntervalDistanceNm)
             return False
         return True
-    
+
 
     def allAnglesLessThan90degrees(self, minIntervalNautics = 10.0):
         ''' returns True if all contiguous angles lower to 90 degrees '''
         ''' suppress point not compliant with the distance interval rules '''
         
         ''' Note: need 3 way-points to build 2 contiguous angles '''
-        index = 0
-        for fix in self.fixList:
-            print self.className + ': fix= {0}'.format(fix)
-            
-            if index == 1 and not(self.departureAirport is None):
-                firstWayPoint = self.departureAirport
-                secondWayPoint = self.wayPointsDict[self.fixList[index-1]]
-                thirdWayPoint = self.wayPointsDict[self.fixList[index]]
-                if (self.isDistanceLessThan(firstIndex = index-1, 
-                                         secondIndex = index, 
-                                         minIntervalNautics = minIntervalNautics) == False):
-                    ''' suppress the point from the fix list '''
-                    print self.className + ': fix suppressed= {0}'.format(self.fixList[index])
-                    self.fixList.pop(index)
-                    
-                self.checkAnglesGreaterTo(firstWayPoint, 
-                                          secondWayPoint, 
-                                          thirdWayPoint,
-                                          maxAngleDifferenceDegrees = 30.0)
-
-            if index >= 2:
+        oneFixSuppressed = True
+        while oneFixSuppressed:
+            index = 0
+            oneFixSuppressed = False
+            for fix in self.fixList:
+                print self.className + ': fix= {0}'.format(fix)
                 
-                firstWayPoint = self.wayPointsDict[self.fixList[index-2]]
-                secondWayPoint = self.wayPointsDict[self.fixList[index-1]]
-                if (self.isDistanceLessThan(firstIndex = index - 2, 
-                                         secondIndex = index - 1, 
-                                         minIntervalNautics = minIntervalNautics) == False):
-                    ''' suppress the point from the fix list '''
-                    print self.className + ': fix suppressed= {0}'.format(self.fixList[index-1])
-                    self.fixList.pop(index-1)
+                if index == 1 and not(self.departureAirport is None):
+                    firstWayPoint = self.departureAirport
+                    secondWayPoint = self.wayPointsDict[self.fixList[index-1]]
+                    thirdWayPoint = self.wayPointsDict[self.fixList[index]]
+                    if (self.isDistanceLessThan(firstIndex = index-1, 
+                                             secondIndex = index, 
+                                             minIntervalNautics = minIntervalNautics) == False):
+                        ''' suppress the point from the fix list '''
+                        print self.className + ': fix suppressed= {0}'.format(self.fixList[index])
+                        self.fixList.pop(index)
+                        oneFixSuppressed = True
+                        
+                    if oneFixSuppressed:
+                        print self.className + ': start the whole loop again from the very beginning '
+                        break
+                    else:
+                        self.checkAnglesGreaterTo(firstWayPoint, 
+                                              secondWayPoint, 
+                                              thirdWayPoint,
+                                              maxAngleDifferenceDegrees = 30.0)
+    
+                if index >= 2:
                     
-                thirdWayPoint = self.wayPointsDict[self.fixList[index]]
-                if (self.isDistanceLessThan(firstIndex = index - 1, 
-                                         secondIndex = index, 
-                                         minIntervalNautics = minIntervalNautics) == False):
-                    ''' suppress the point from the fix list '''
-                    print self.className + ': fix suppressed= {0}'.format(self.fixList[index])
-                    self.fixList.pop(index) 
-                                  
-                self.checkAnglesGreaterTo(firstWayPoint, 
-                                          secondWayPoint, 
-                                          thirdWayPoint,
-                                          maxAngleDifferenceDegrees = 30.0)
-
-            print self.className + '============ index = {0} ==========='.format(index)
-            index += 1
+                    firstWayPoint = self.wayPointsDict[self.fixList[index-2]]
+                    secondWayPoint = self.wayPointsDict[self.fixList[index-1]]
+                    if (self.isDistanceLessThan(firstIndex = index - 2, 
+                                             secondIndex = index - 1, 
+                                             minIntervalNautics = minIntervalNautics) == False):
+                        ''' suppress the point from the fix list '''
+                        print self.className + ': fix suppressed= {0}'.format(self.fixList[index-1])
+                        self.fixList.pop(index-1)
+                        oneFixSuppressed = True
+                        
+                    thirdWayPoint = self.wayPointsDict[self.fixList[index]]
+                    if (self.isDistanceLessThan(firstIndex = index - 1, 
+                                             secondIndex = index, 
+                                             minIntervalNautics = minIntervalNautics) == False):
+                        ''' suppress the point from the fix list '''
+                        print self.className + ': fix suppressed= {0}'.format(self.fixList[index])
+                        self.fixList.pop(index)
+                        oneFixSuppressed = True
+                    
+                    if oneFixSuppressed:
+                        print self.className + ': start the whole loop again from the very beginning '
+                        break
+                    else:
+                        self.checkAnglesGreaterTo(firstWayPoint, 
+                                              secondWayPoint, 
+                                              thirdWayPoint,
+                                              maxAngleDifferenceDegrees = 30.0)
+    
+                print self.className + '============ index = {0} ==========='.format(index)
+                index += 1
         return True
     
     
@@ -390,123 +405,106 @@ class FlightPlan(object):
         return lengthMeters
     
     
-#============================================
+class Test_Flight_Plan(unittest.TestCase):
+
+    def test_main(self):
+
+
+        
+        print "=========== Flight Plan start  =========== " 
+        
+        strRoute = 'ADEP/LFBO-TOU-ALIVA-TOU37-FISTO-LMG-PD01-PD02-AMB-AMB01-AMB02-PD03-PD04-OLW11-OLW83-ADES/LFPO'
+        flightPlan = FlightPlan(strRoute)
+    
+        print 'is over flight= {0}'.format(flightPlan.isOverFlight())
+        print 'is domestic= ' + str(flightPlan.isDomestic())
+        print 'is in Bound= ' + str(flightPlan.isInBound())
+        print 'is out Bound= ' + str(flightPlan.isOutBound())
+        print 'all angles > 90.0 degrees= ' + str(flightPlan.allAnglesLessThan90degrees())
+        print 'flight path length= ' + str(flightPlan.computeLengthNauticalMiles()) + ' nautical miles'
+    
+        print "=========== Flight Plan start  =========== " 
+    
+    #     fixListIndex = 0
+    #     print 'length from index={0} - length= {1} meters'.format(fixListIndex, 
+    #                                                               flightPlan.computeDistanceToLastFixMeters(fixListIndex = 0))
+    #     print "=========== Flight Plan start  =========== " 
+    # 
+    #     fixListIndex = 1
+    #     print 'length from index={0} - length= {1} meters'.format(fixListIndex, 
+    #                                                               flightPlan.computeStillToFlyMeters(fixListIndex = 0))
+    #     
+        print flightPlan.getDepartureAirport()
+        print flightPlan.getArrivalAirport()
+    
+        print "=========== Flight Plan start  =========== " 
+        
+        strRoute = 'TOU-ALIVA-TOU37-FISTO-LMG-PD01-PD02-AMB-AMB01-AMB02-PD03-PD04-OLW11-OLW83-ADES/LFPO'
+        flightPlan = FlightPlan(strRoute)
+    
+        print 'is over flight= ' + str(flightPlan.isOverFlight())
+        print 'is domestic= ' + str(flightPlan.isDomestic())
+        print 'is in Bound= ' + str(flightPlan.isInBound())
+        print 'is out Bound= ' + str(flightPlan.isOutBound())
+        print 'all angles > 90.0 degrees= ' + str(flightPlan.allAnglesLessThan90degrees())
+        print 'flight path length= ' + str(flightPlan.computeLengthNauticalMiles()) + ' nautical miles'
+    
+    
+        print "=========== Flight Plan start  =========== " 
+        
+        strRoute = 'ADEP/LFBO-TOU-ALIVA-TOU37-FISTO-LMG-PD01-PD02-AMB-AMB01-AMB02-PD03-PD04-OLW11-OLW83'
+        flightPlan = FlightPlan(strRoute)
+    
+        print 'is over flight= ' + str(flightPlan.isOverFlight())
+        print 'is domestic= ' + str(flightPlan.isDomestic())
+        print 'is in Bound= ' + str(flightPlan.isInBound())
+        print 'is out Bound= ' + str(flightPlan.isOutBound())
+        print 'all angles > 90.0 degrees= ' + str(flightPlan.allAnglesLessThan90degrees())
+        print 'flight path length= ' + str(flightPlan.computeLengthNauticalMiles()) + ' nautical miles'
+    
+    
+        print "=========== Flight Plan start  =========== " 
+        
+        strRoute = 'TOU-ALIVA-TOU37-FISTO-LMG-PD01-PD02-AMB-AMB01-AMB02-PD03-PD04-OLW11-OLW83'
+        flightPlan = FlightPlan(strRoute)
+    
+        print 'is over flight= ' + str(flightPlan.isOverFlight())
+        print 'is domestic= ' + str(flightPlan.isDomestic())
+        print 'is in Bound= ' + str(flightPlan.isInBound())
+        print 'is out Bound= ' + str(flightPlan.isOutBound())
+        print 'flight path length= ' + str(flightPlan.computeLengthNauticalMiles()) + ' nautical miles'
+        
+        strRoute = 'ADEP/SBGL-ALDEIA-NIKDO-MACAE-GIKPO-MABSI-VITORIA-GIDOD-'
+        strRoute += 'ISILA-POSGA-SEGURO-BIDEV-NAXOV-IRUMI-ESLIB-MEDIT-RUBEN-KIBEG-'
+        strRoute += 'AMBET-VUKSU-NORONHA-UTRAM-MEDAL-NAMBI-RAKUD-IRAVU-MOGNI-ONOBI-CABRAL-'
+        strRoute += 'IPERA-ISOKA-LIMAL-UDATI-ODEGI-LOMAS-CANARIA-VASTO-SULAM-DIMSA-ATLUX-'
+        strRoute += 'SUNID-AKUDA-OBOLO-PESAS-EKRIS-LUSEM-LULUT-BORDEAUX-COGNAC-ADABI-BOKNO-'
+        strRoute += 'DEVRO-VANAD-KOVAK-ADES/LFPG'
+    
+        print "=========== Flight Plan start  =========== " 
+    
+        flightPlan = FlightPlan(strRoute)
+    
+        print 'is over flight= ' + str(flightPlan.isOverFlight())
+        print 'is domestic= ' + str(flightPlan.isDomestic())
+        print 'is in Bound= ' + str(flightPlan.isInBound())
+        print 'is out Bound= ' + str(flightPlan.isOutBound())
+        print 'flight path length= ' + str(flightPlan.computeLengthNauticalMiles()) + ' nautical miles'
+        
+        print "=========== Flight Plan start  =========== " 
+        strRoute = 'ADEP/SBGL-ALDEIA-NIKDO-MACAE'
+        flightPlan = FlightPlan(strRoute)
+    
+        print "=========== Flight Plan start  =========== " 
+    
+        strRoute = 'ADEP/LFBM/27-'
+        strRoute += 'SAU-VELIN-LMG-BEBIX-GUERE-LARON-KUKOR-MOU-'
+        strRoute += 'PIBAT-DJL-RESPO-DANAR-POGOL-OBORN-LUPEN-SUL-'
+        strRoute += 'ESULI-TEDGO-ETAGO-IBAGA-RATIP-PIBAD-SOMKO-'
+        strRoute += 'ADES/EDDP/26R'
+        flightPlan = FlightPlan(strRoute)
+        
+        print 'flight path length= ' + str(flightPlan.computeLengthNauticalMiles()) + ' nautical miles'
+    
 if __name__ == '__main__':
-    
-    print "=========== Flight Plan start  =========== " 
-    
-    strRoute = 'ADEP/LFBO-TOU-ALIVA-TOU37-FISTO-LMG-PD01-PD02-AMB-AMB01-AMB02-PD03-PD04-OLW11-OLW83-ADES/LFPO'
-    flightPlan = FlightPlan(strRoute)
-
-    print 'is over flight= {0}'.format(flightPlan.isOverFlight())
-    print 'is domestic= ' + str(flightPlan.isDomestic())
-    print 'is in Bound= ' + str(flightPlan.isInBound())
-    print 'is out Bound= ' + str(flightPlan.isOutBound())
-    print 'all angles > 90.0 degrees= ' + str(flightPlan.allAnglesLessThan90degrees())
-    print 'flight path length= ' + str(flightPlan.computeLengthNauticalMiles()) + ' nautical miles'
-
-    print "=========== Flight Plan start  =========== " 
-
-#     fixListIndex = 0
-#     print 'length from index={0} - length= {1} meters'.format(fixListIndex, 
-#                                                               flightPlan.computeDistanceToLastFixMeters(fixListIndex = 0))
-#     print "=========== Flight Plan start  =========== " 
-# 
-#     fixListIndex = 1
-#     print 'length from index={0} - length= {1} meters'.format(fixListIndex, 
-#                                                               flightPlan.computeStillToFlyMeters(fixListIndex = 0))
-#     
-    print flightPlan.getDepartureAirport()
-    print flightPlan.getArrivalAirport()
-
-    print "=========== Flight Plan start  =========== " 
-    
-    strRoute = 'TOU-ALIVA-TOU37-FISTO-LMG-PD01-PD02-AMB-AMB01-AMB02-PD03-PD04-OLW11-OLW83-ADES/LFPO'
-    flightPlan = FlightPlan(strRoute)
-
-    print 'is over flight= ' + str(flightPlan.isOverFlight())
-    print 'is domestic= ' + str(flightPlan.isDomestic())
-    print 'is in Bound= ' + str(flightPlan.isInBound())
-    print 'is out Bound= ' + str(flightPlan.isOutBound())
-    print 'all angles > 90.0 degrees= ' + str(flightPlan.allAnglesLessThan90degrees())
-    print 'flight path length= ' + str(flightPlan.computeLengthNauticalMiles()) + ' nautical miles'
-
-
-    print "=========== Flight Plan start  =========== " 
-    
-    strRoute = 'ADEP/LFBO-TOU-ALIVA-TOU37-FISTO-LMG-PD01-PD02-AMB-AMB01-AMB02-PD03-PD04-OLW11-OLW83'
-    flightPlan = FlightPlan(strRoute)
-
-    print 'is over flight= ' + str(flightPlan.isOverFlight())
-    print 'is domestic= ' + str(flightPlan.isDomestic())
-    print 'is in Bound= ' + str(flightPlan.isInBound())
-    print 'is out Bound= ' + str(flightPlan.isOutBound())
-    print 'all angles > 90.0 degrees= ' + str(flightPlan.allAnglesLessThan90degrees())
-    print 'flight path length= ' + str(flightPlan.computeLengthNauticalMiles()) + ' nautical miles'
-
-
-    print "=========== Flight Plan start  =========== " 
-    
-    strRoute = 'TOU-ALIVA-TOU37-FISTO-LMG-PD01-PD02-AMB-AMB01-AMB02-PD03-PD04-OLW11-OLW83'
-    flightPlan = FlightPlan(strRoute)
-
-    print 'is over flight= ' + str(flightPlan.isOverFlight())
-    print 'is domestic= ' + str(flightPlan.isDomestic())
-    print 'is in Bound= ' + str(flightPlan.isInBound())
-    print 'is out Bound= ' + str(flightPlan.isOutBound())
-    print 'flight path length= ' + str(flightPlan.computeLengthNauticalMiles()) + ' nautical miles'
-    
-    strRoute = 'ADEP/SBGL-ALDEIA-NIKDO-MACAE-GIKPO-MABSI-VITORIA-GIDOD-'
-    strRoute += 'ISILA-POSGA-SEGURO-BIDEV-NAXOV-IRUMI-ESLIB-MEDIT-RUBEN-KIBEG-'
-    strRoute += 'AMBET-VUKSU-NORONHA-UTRAM-MEDAL-NAMBI-RAKUD-IRAVU-MOGNI-ONOBI-CABRAL-'
-    strRoute += 'IPERA-ISOKA-LIMAL-UDATI-ODEGI-LOMAS-CANARIA-VASTO-SULAM-DIMSA-ATLUX-'
-    strRoute += 'SUNID-AKUDA-OBOLO-PESAS-EKRIS-LUSEM-LULUT-BORDEAUX-COGNAC-ADABI-BOKNO-'
-    strRoute += 'DEVRO-VANAD-KOVAK-ADES/LFPG'
-
-    print "=========== Flight Plan start  =========== " 
-
-    flightPlan = FlightPlan(strRoute)
-
-    print 'is over flight= ' + str(flightPlan.isOverFlight())
-    print 'is domestic= ' + str(flightPlan.isDomestic())
-    print 'is in Bound= ' + str(flightPlan.isInBound())
-    print 'is out Bound= ' + str(flightPlan.isOutBound())
-    print 'flight path length= ' + str(flightPlan.computeLengthNauticalMiles()) + ' nautical miles'
-    
-    print "=========== Flight Plan start  =========== " 
-    strRoute = 'ADEP/SBGL-ALDEIA-NIKDO-MACAE'
-    flightPlan = FlightPlan(strRoute)
-
-    print "=========== Flight Plan start  =========== " 
-
-    strRoute = 'ADEP/LFBM/27-'
-    strRoute += 'SAU-VELIN-LMG-BEBIX-GUERE-LARON-KUKOR-MOU-'
-    strRoute += 'PIBAT-DJL-RESPO-DANAR-POGOL-OBORN-LUPEN-SUL-'
-    strRoute += 'ESULI-TEDGO-ETAGO-IBAGA-RATIP-PIBAD-SOMKO-'
-    strRoute += 'ADES/EDDP/26R'
-    flightPlan = FlightPlan(strRoute)
-    
-    print 'flight path length= ' + str(flightPlan.computeLengthNauticalMiles()) + ' nautical miles'
-
-#     print "=========== Flight Plan start  =========== " 
-# 
-#     fixListIndex = 0
-#     lengthMeters = flightPlan.computeStillToFlyMeters(fixListIndex)
-#     print 'length from index= {0} - length= {1} meters - length= {2} nautics'.format(fixListIndex, 
-#                                                               lengthMeters,
-#                                                               lengthMeters * Meter2NauticalMiles)
-#     print "=========== Flight Plan start  =========== " 
-# 
-#     fixListIndex = 1
-#     lengthMeters = flightPlan.computeStillToFlyMeters(fixListIndex)
-#     print 'length from index= {0} - length= {1} meters - length= {2} nautics'.format(fixListIndex, 
-#                                                                                    lengthMeters, 
-#                                                                                    lengthMeters * Meter2NauticalMiles)
-#     print "=========== Flight Plan start  =========== " 
-# 
-#     fixListIndex = 2
-#     lengthMeters = flightPlan.computeStillToFlyMeters(fixListIndex)
-#     print 'length from index= {0} - length= {1} meters - length= {2} nautics'.format(fixListIndex, 
-#                                                                                    lengthMeters, 
-#                                                                                    lengthMeters * Meter2NauticalMiles)
-
+    unittest.main()
