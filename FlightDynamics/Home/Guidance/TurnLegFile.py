@@ -4,8 +4,6 @@ Created on 17 December 2014
 
 @author: PASTOR Robert
 
-@author: PASTOR Robert
-
         Written By:
                 Robert PASTOR 
                 @Email: < robert [--DOT--] pastor0691 (--AT--) orange [--DOT--] fr >
@@ -47,6 +45,7 @@ TAS [kt] RADIUS (15° Φ) [NM] RADIUS (25° Φ) [NM]
 '''
 import time
 import math
+import unittest
 
 from Home.aerocalc.airspeed import cas2tas
 
@@ -551,94 +550,104 @@ class TurnLeg(Graph):
                 self.addVertex(point)
         
 
-if __name__ == '__main__':
 
-    print '==================== Turn Leg ==================== '+ time.strftime("%c")
-    atmosphere = Atmosphere()
-    earth = Earth()
-    
-    acBd = BadaAircraftDatabase()
-    aircraftICAOcode = 'A320'
-    assert acBd.read()
-    assert acBd.aircraftExists(aircraftICAOcode) 
-    assert acBd.aircraftPerformanceFileExists(aircraftICAOcode)
-            
-    print '==================== aircraft found  ==================== '+ time.strftime("%c")
-    aircraft = BadaAircraft(ICAOcode = aircraftICAOcode, 
-                            aircraftFullName = acBd.getAircraftFullName(aircraftICAOcode),
-                            badaPerformanceFilePath = acBd.getAircraftPerformanceFile(aircraftICAOcode),
-                            atmosphere = atmosphere,
-                            earth = earth)
-    aircraft.dump()
-            
-    print '==================== Get Airport ==================== '+ time.strftime("%c")
-    airportsDB = AirportsDatabase()
-    assert airportsDB.read()
-    
-    print '==================== Get Arrival Airport ==================== '+ time.strftime("%c")
-    Lisbonne = airportsDB.getAirportFromICAOCode('LPPT')
-    print Lisbonne
-    
-    print '====================  find the run-ways ==================== '+ time.strftime("%c")
-    runWaysDatabase = RunWayDataBase()
-    if runWaysDatabase.read():
-        print 'runways DB correctly read'
+class Test_TurnLeg(unittest.TestCase):
+
+    def test_TurnLeg(self):
+
+        print '==================== Turn Leg ==================== '+ time.strftime("%c")
+        atmosphere = Atmosphere()
+        earth = Earth()
         
-    print '====================  take off run-way ==================== '+ time.strftime("%c")
-    arrivalRunway = runWaysDatabase.getFilteredRunWays(
-                                                       airportICAOcode = 'LPPT', 
-                                                       runwayName = '')
-    print arrivalRunway
+        acBd = BadaAircraftDatabase()
+        aircraftICAOcode = 'A320'
+        assert acBd.read()
+        assert acBd.aircraftExists(aircraftICAOcode) 
+        assert acBd.aircraftPerformanceFileExists(aircraftICAOcode)
+                
+        print '==================== aircraft found  ==================== '+ time.strftime("%c")
+        aircraft = BadaAircraft(ICAOcode = aircraftICAOcode, 
+                                aircraftFullName = acBd.getAircraftFullName(aircraftICAOcode),
+                                badaPerformanceFilePath = acBd.getAircraftPerformanceFile(aircraftICAOcode),
+                                atmosphere = atmosphere,
+                                earth = earth)
+        aircraft.dump()
+                
+        print '==================== Get Airport ==================== '+ time.strftime("%c")
+        airportsDB = AirportsDatabase()
+        assert airportsDB.read()
+        
+        print '==================== Get Arrival Airport ==================== '+ time.strftime("%c")
+        Lisbonne = airportsDB.getAirportFromICAOCode('LPPT')
+        print Lisbonne
+        
+        print '====================  find the run-ways ==================== '+ time.strftime("%c")
+        runWaysDatabase = RunWayDataBase()
+        if runWaysDatabase.read():
+            print 'runways DB correctly read'
+            
+        print '====================  take off run-way ==================== '+ time.strftime("%c")
+        arrivalRunway = runWaysDatabase.getFilteredRunWays(
+                                                           airportICAOcode = 'LPPT', 
+                                                           runwayName = '')
+        print arrivalRunway
+        
+        print '==================== Ground run ==================== '+ time.strftime("%c")
+        groundRun = GroundRunLeg(runway = arrivalRunway, 
+                                 aircraft = aircraft,
+                                 airport = Lisbonne)
+        
+        touchDownWayPoint = groundRun.computeTouchDownWayPoint()
+        print touchDownWayPoint
+        groundRun.buildDepartureGroundRun(deltaTimeSeconds = 1.0,
+                                          elapsedTimeSeconds = 0.0,
+                                          distanceStillToFlyMeters = 0.0,
+                                          distanceToLastFixMeters = 0.0)
+        print '==================== Climb Ramp ==================== '+ time.strftime("%c")
+        
+        initialWayPoint = groundRun.getLastVertex().getWeight()
     
-    print '==================== Ground run ==================== '+ time.strftime("%c")
-    groundRun = GroundRunLeg(runway = arrivalRunway, 
-                             aircraft = aircraft,
-                             airport = Lisbonne)
+        descentGlideSlope = DescentGlideSlope( runway   = arrivalRunway,
+                                                aircraft = aircraft,
+                                                arrivalAirport = Lisbonne ,
+                                                descentGlideSlopeDegrees = 3.0)
+        ''' if there is a fix nearer to 5 nautics of the touch-down then limit size of simulated glide slope '''
     
-    touchDownWayPoint = groundRun.computeTouchDownWayPoint()
-    print touchDownWayPoint
-    groundRun.buildDepartureGroundRun(deltaTimeSeconds = 1.0,
-                                      elapsedTimeSeconds = 0.0,
-                                      distanceStillToFlyMeters = 0.0)
-    print '==================== Climb Ramp ==================== '+ time.strftime("%c")
+        descentGlideSlope.buildSimulatedGlideSlope(descentGlideSlopeSizeNautics = 5.0)
+        descentGlideSlope.createKmlOutputFile()
+        
+        firstGlideSlopeWayPoint = descentGlideSlope.getVertex(v=0).getWeight()
     
-    initialWayPoint = groundRun.getLastVertex().getWeight()
-
-    descentGlideSlope = DescentGlideSlope( runway   = arrivalRunway,
-                                            aircraft = aircraft,
-                                            arrivalAirport = Lisbonne ,
-                                            descentGlideSlopeDegrees = 3.0)
-    ''' if there is a fix nearer to 5 nautics of the touch-down then limit size of simulated glide slope '''
-
-    descentGlideSlope.buildSimulatedGlideSlope(descentGlideSlopeSizeNautics = 5.0)
-    firstGlideSlopeWayPoint = descentGlideSlope.getVertex(v=0).getWeight()
-
-    print '==================== Climb Ramp ==================== '+ time.strftime("%c")
-    initialWayPoint = groundRun.getLastVertex().getWeight()
-
-    print ' ================== turn leg end =============== '
-    wayPointsDb = WayPointsDatabase()
-    assert (wayPointsDb.read())
-    Exona = wayPointsDb.getWayPoint('EXONA')
-    Rosal = wayPointsDb.getWayPoint('ROSAL')
-
-    print Rosal.getBearingDegreesTo(Exona) 
-    initialHeadingDegrees = arrivalRunway.getTrueHeadingDegrees()
+        print '==================== Climb Ramp ==================== '+ time.strftime("%c")
+        initialWayPoint = groundRun.getLastVertex().getWeight()
     
-    lastTurnLeg = TurnLeg( initialWayPoint = firstGlideSlopeWayPoint, 
-                           finalWayPoint = Exona,
-                           initialHeadingDegrees = initialHeadingDegrees, 
-                           aircraft = aircraft,
-                           reverse = True)
-    deltaTimeSeconds = 1.0
-    lastTurnLeg.buildNewSimulatedArrivalTurnLeg(deltaTimeSeconds = deltaTimeSeconds,
-                                                 elapsedTimeSeconds = 0.0,
-                                                 distanceStillToFlyMeters = 0.0,
-                                                 simulatedAltitudeSeaLevelMeters = firstGlideSlopeWayPoint.getAltitudeMeanSeaLevelMeters(),
-                                                 flightPathAngleDegrees = 3.0)
-    descentGlideSlope.addGraph(lastTurnLeg)
-    #descentGlideSlope.createXlsxOutputFile()
-    descentGlideSlope.createKmlOutputFile()
+        print ' ================== turn leg end =============== '
+        wayPointsDb = WayPointsDatabase()
+        assert (wayPointsDb.read())
+        Exona = wayPointsDb.getWayPoint('EXONA')
+        Rosal = wayPointsDb.getWayPoint('ROSAL')
     
-    print ' ================== turn leg end =============== '
+        print Rosal.getBearingDegreesTo(Exona) 
+        initialHeadingDegrees = arrivalRunway.getTrueHeadingDegrees()
+        
+        lastTurnLeg = TurnLeg( initialWayPoint = firstGlideSlopeWayPoint, 
+                               finalWayPoint = Exona,
+                               initialHeadingDegrees = initialHeadingDegrees, 
+                               aircraft = aircraft,
+                               reverse = True)
+        deltaTimeSeconds = 1.0
+        lastTurnLeg.buildNewSimulatedArrivalTurnLeg(deltaTimeSeconds = deltaTimeSeconds,
+                                                     elapsedTimeSeconds = 0.0,
+                                                     distanceStillToFlyMeters = 0.0,
+                                                     simulatedAltitudeSeaLevelMeters = firstGlideSlopeWayPoint.getAltitudeMeanSeaLevelMeters(),
+                                                     flightPathAngleDegrees = 3.0)
+        lastTurnLeg.createKmlOutputFile()
+        descentGlideSlope.addGraph(lastTurnLeg)
+        #descentGlideSlope.createXlsxOutputFile()
+        descentGlideSlope.createKmlOutputFile()
+        
+        print ' ================== turn leg end =============== '
 
+if __name__ == '__main__':
+    unittest.main()
+    
