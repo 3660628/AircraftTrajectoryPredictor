@@ -28,6 +28,7 @@ start in aircraft approach configuration and end when aircraft speed reaches lan
 '''
 import time
 import math
+import unittest
 
 from Home.Environment.RunWaysDatabaseFile import RunWayDataBase, RunWay
 from Home.Environment.AirportDatabaseFile import AirportsDatabase
@@ -202,6 +203,7 @@ class DescentGlideSlope(Graph):
         '''=============================='''
         index = 0
         initialIndex = index
+        elapsedTimeSeconds = 0.0
         '''=================================================================='''
         ''' glide slope to intercept the landing ILS beam '''
         '''=================================================================='''
@@ -227,6 +229,9 @@ class DescentGlideSlope(Graph):
                 ''' need to add altitude above ground to field elevation '''
                 altitudeMeters += fieldElevationAboveSeaLevelMeters
                 newIntermediatePoint.setAltitudeMeanSeaLevelMeters(altitudeMeters)
+                elapsedTimeSeconds += 0.1
+                newIntermediatePoint.setElapsedTimeSeconds(elapsedTimeSeconds = elapsedTimeSeconds)
+
                 
             ''' append the new point to the list '''
             intermediateGlideSlopeRoute.append(newIntermediatePoint)
@@ -242,55 +247,77 @@ class DescentGlideSlope(Graph):
         simulatedGlideSlopeLengthMeters = newIntermediatePoint.getDistanceMetersTo(self.runWayTouchDownPoint)
         print self.className + ': distance from last way point to touch-down: {0:.2f} nautics'.format(simulatedGlideSlopeLengthMeters * Meter2NauticalMiles)
 
+
+
 #============================================
+class Test_DescentGlideSlope(unittest.TestCase):
+
+    def test_DescentGlideSlope(self):
+    
+        atmosphere = Atmosphere()
+        earth = Earth()
+        print '==================== three degrees Descent Slope Start  ==================== '+ time.strftime("%c")
+    
+        acBd = BadaAircraftDatabase()
+        aircraftICAOcode = 'A320'
+        if acBd.read():
+            if ( acBd.aircraftExists(aircraftICAOcode) 
+                 and acBd.aircraftPerformanceFileExists(aircraftICAOcode)):
+                
+                print '==================== aircraft found  ==================== '+ time.strftime("%c")
+    
+                aircraft = BadaAircraft(ICAOcode = aircraftICAOcode, 
+                                        aircraftFullName = acBd.getAircraftFullName(aircraftICAOcode),
+                                        badaPerformanceFilePath = acBd.getAircraftPerformanceFile(aircraftICAOcode),
+                                        atmosphere = atmosphere,
+                                        earth = earth)
+                aircraft.dump()
+     
+        assert not (aircraft is None)
+        print '==================== runways database ==================== '+ time.strftime("%c")
+        runWaysDatabase = RunWayDataBase()
+        assert runWaysDatabase.read()
+        
+        runway = runWaysDatabase.getFilteredRunWays(airportICAOcode = 'LFML', runwayName = '')
+        print runway
+      
+        print "=========== arrival airport  =========== " + time.strftime("%c")
+        airportsDB = AirportsDatabase()
+        assert (airportsDB.read())
+        
+        MarseilleMarignane = airportsDB.getAirportFromICAOCode('LFML')
+        print MarseilleMarignane
+        
+        print "=========== descent glide slope  =========== " + time.strftime("%c")
+        threeDegreesGlideSlope = DescentGlideSlope(runway = runway, 
+                                                   aircraft = aircraft, 
+                                                   arrivalAirport = MarseilleMarignane )
+        
+        initialWayPoint = WayPoint(Name = 'startOfDescentGlideSlope',
+                                   )
+        print "=========== DescentGlideSlope build the glide slope  =========== " + time.strftime("%c")
+    #     threeDegreesGlideSlope.buildGlideSlope(deltaTimeSeconds = 0.1,
+    #                         elapsedTimeSeconds = 0.0, 
+    #                         initialWayPoint = None, 
+    #                         flownDistanceMeters = 0.0, 
+    #                         distanceStillToFlyMeters = 100000.0,
+    #                         distanceToLastFixMeters = 100000.0)
+    
+        threeDegreesGlideSlope.buildSimulatedGlideSlope(descentGlideSlopeSizeNautics = 5.0)
+        
+        print "=========== DescentGlideSlope  =========== " + time.strftime("%c")
+        for node in threeDegreesGlideSlope.getVertices():
+            print node
+        
+        print "=========== DescentGlideSlope length =========== " + time.strftime("%c")
+        print "get number of vertices= {0}".format( threeDegreesGlideSlope.getNumberOfVertices() )
+        print "get number of edges= {0}".format ( threeDegreesGlideSlope.getNumberOfEdges() )
+        print 'Glide Slope overall length= {0} meters'.format( threeDegreesGlideSlope.computeLengthMeters() )
+        
+        threeDegreesGlideSlope.createKmlOutputFile()
+        threeDegreesGlideSlope.createXlsxOutputFile()
+        print '==================== three degrees Descent Slope End  ==================== '+ time.strftime("%c")
+
+
 if __name__ == '__main__':
-    
-    atmosphere = Atmosphere()
-    earth = Earth()
-    print '==================== three degrees Descent Slope Start  ==================== '+ time.strftime("%c")
-
-    acBd = BadaAircraftDatabase()
-    aircraftICAOcode = 'A320'
-    if acBd.read():
-        if ( acBd.aircraftExists(aircraftICAOcode) 
-             and acBd.aircraftPerformanceFileExists(acBd.getAircraftPerformanceFile(aircraftICAOcode))):
-            
-            print '==================== aircraft found  ==================== '+ time.strftime("%c")
-
-            aircraft = BadaAircraft(aircraftICAOcode, 
-                                    acBd.getAircraftPerformanceFile(aircraftICAOcode),
-                                    atmosphere,
-                                    earth)
-            aircraft.dump()
- 
-    print '==================== runways database ==================== '+ time.strftime("%c")
-    runWaysDatabase = RunWayDataBase()
-    if runWaysDatabase.read():
-        print 'runways DB correctly read'
-    
-    runway = runWaysDatabase.getFilteredRunWays('LFML', 'Landing', aircraft.WakeTurbulenceCategory)
-    print runway
-  
-    print "=========== arrival airport  =========== " + time.strftime("%c")
-    airportsDB = AirportsDatabase()
-    assert (airportsDB.read())
-    MarseilleMarignane = airportsDB.getAirportFromICAOCode('LFML')
-    print MarseilleMarignane
-    
-    print "=========== descent glide slope  =========== " + time.strftime("%c")
-    threeDegreesGlideSlope = DescentGlideSlope(runway, aircraft, MarseilleMarignane )
-    
-    print "=========== DescentGlideSlope build the glide slope  =========== " + time.strftime("%c")
-    threeDegreesGlideSlope.buildGlideSlope()
-    
-    print "=========== DescentGlideSlope  =========== " + time.strftime("%c")
-    for node in threeDegreesGlideSlope.getVertices():
-        print node
-    
-    print "=========== DescentGlideSlope length =========== " + time.strftime("%c")
-    print "get number of vertices= ", threeDegreesGlideSlope.getNumberOfVertices()
-    print "get number of edges= ", threeDegreesGlideSlope.getNumberOfEdges()
-    print 'Glide Slope overall length= ', threeDegreesGlideSlope.computeLengthMeters(), ' meters'
-    
-    threeDegreesGlideSlope.createKmlOutputFile()
-    print '==================== three degrees Descent Slope End  ==================== '+ time.strftime("%c")
+    unittest.main()
