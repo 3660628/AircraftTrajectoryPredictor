@@ -99,7 +99,10 @@ class FlightEnvelope(AeroDynamics):
         self.arrivalAirportFieldElevationMeters = 0.0
         
         self.StateVector = StateVector(ICAOcode, atmosphere)
+        self.departureAirportAltitudeMSLmeters = 0.0
         
+        self.approachWayPoint = None
+        self.arrivalRunWayTouchDownWayPoint = None
 
     def setTargetCruiseFlightLevel(self, 
                                    RequestedFlightLevel, 
