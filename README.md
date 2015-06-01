@@ -11,13 +11,13 @@ It allows to compute aircraft (jet) trajectories.
 Three kind of outputs are generated. 
 A Google Earth KML file and two xlsx containing the vertical flight profile and the lateral profile. 
 This software needs :
-<br>-1) Numpy (http://www.numpy.org/)
-<br>-2) XlsxWriter (https://xlsxwriter.readthedocs.org/)
+<br>1) Numpy (http://www.numpy.org/)
+<br>2) XlsxWriter (https://xlsxwriter.readthedocs.org/)
 
 See some explanations about this software (in french):<br>
 http://trajectoire-predict.monsite-orange.fr/
 
-Limitations : 
+Limitations : <br>
 1) only flights with departure and arrival airports are manage, hence inbounds or outbounds not yet implemented
 2) the arrival and the departure airport needs to have each a runway defined in the runways database
 
