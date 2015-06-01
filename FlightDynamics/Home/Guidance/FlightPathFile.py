@@ -86,7 +86,9 @@ class FlightPath(FlightPlan):
         self.aircraft.setTargetCruiseMach(cruiseMachNumber = cruiseMach)
         
         self.arrivalAirport = self.getArrivalAirport()
-        assert isinstance(self.arrivalAirport, Airport) and not(self.arrivalAirport is None)
+        if (self.arrivalAirport is None):
+            print self.className + ': there is no arrival airport => flight is outbound !!!'
+        #assert isinstance(self.arrivalAirport, Airport) and not(self.arrivalAirport is None)
         
         self.departureAirport = self.getDepartureAirport()
         assert isinstance(self.departureAirport, Airport) and not(self.departureAirport is None)
@@ -469,10 +471,10 @@ class FlightPath(FlightPlan):
         assert not( self.departureRunway is None)
         assert not( self.departureAirport is None)
         
-        if self.isDomestic() or self.outBound():
+        if self.isDomestic() or self.isOutBound():
             initialHeadingDegrees , initialWayPoint = self.buildDeparturePhase()
       
-        if self.isDomestic() or self.inBound():
+        if self.isDomestic() or self.isInBound():
             assert not(self.arrivalAirport is None)
             self.buildSimulatedArrivalPhase()
         
