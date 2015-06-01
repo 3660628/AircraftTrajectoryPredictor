@@ -31,7 +31,7 @@ density at mean sea level = 1.225 kg / cubic meters
 import unittest
 import numpy
 import xlsxwriter
-
+import os
 import math
 
 MeterPerSecond2Knots = 1.94384449 
@@ -350,16 +350,19 @@ class Test_Main(unittest.TestCase):
     def test_mains(self):
 
         
-        FileName = "Tabular Atmosphere.xlsx"
+        fileName = "Tabular Atmosphere.xlsx"
         print "===================Tabular Atmosphere start======================"
-        workbook = xlsxwriter.Workbook(FileName)
+        if 'FlightDynamics' in os.getcwd():
+            fileName = os.getcwd() + os.path.sep + 'Home' +  os.path.sep + 'ResultsFiles' + os.path.sep + fileName
+        
+        workbook = xlsxwriter.Workbook(fileName)
         worksheet = workbook.add_worksheet('Temperature Degrees')
         
         RowIndex = 0
         ColumnIndex = 0
         for header in ['Altitude-Meters', 
                        'Temperature-Degrees',
-                       'Temperatur-Kelvins',
+                       'Temperature-Kelvins',
                        'Air-density-kg-per-cubic-meters',
                        'speed-of-sound',
                        'pressure-hecto-pascals']:
