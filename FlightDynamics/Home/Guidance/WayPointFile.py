@@ -26,6 +26,8 @@ Created on 13 juil. 2014
 '''
 
 from Home.Guidance.Haversine import points2distanceMeters, points2bearingDegrees, LatitudeLongitudeAtDistanceBearing
+from Home.Environment.RunWaysDatabaseFile import RunWayDataBase
+
 import time
 import math
 import unittest
@@ -159,18 +161,24 @@ class Airport(WayPoint):
     
     def __init__(self, Name="Orly-Paris-Sud", 
                  LatitudeDegrees = 48.726254 , 
-                 LongitudeDegrees=2.365247 ,
-                 fieldElevationAboveSeaLevelMeters=300, 
-                 isDeparture=False, 
-                 isArrival=False,
-                 ICAOcode='',
-                 Country=''):
+                 LongitudeDegrees = 2.365247 ,
+                 fieldElevationAboveSeaLevelMeters = 300, 
+                 isDeparture = False, 
+                 isArrival = False,
+                 ICAOcode = '',
+                 Country = ''):
         
         WayPoint.__init__(self, Name, LatitudeDegrees, LongitudeDegrees)
         self.fieldElevationAboveSeaLevelMeters = fieldElevationAboveSeaLevelMeters
+        
+        assert isinstance(isDeparture, bool) and isinstance(isArrival, bool)
         self.isDeparture = isDeparture
         self.isArrival = isArrival
+        
+        assert isinstance(ICAOcode, (str,unicode)) and len(ICAOcode)>0
         self.ICAOcode = ICAOcode
+    
+        assert isinstance(Country, (str,unicode)) and len(Country)>0
         self.Country = Country
         
     def getICAOcode(self):
@@ -189,6 +197,20 @@ class Airport(WayPoint):
     def getFieldElevationAboveSeaLevelMeters(self):
         return self.fieldElevationAboveSeaLevelMeters
     
+    
+    def hasRunWays(self, runwaysDatabase):
+        ''' return true if this airport has at least one run-way in the database '''
+        assert isinstance(runwaysDatabase, RunWayDataBase) and not(runwaysDatabase is None)
+        return runwaysDatabase.hasRunWays(self.ICAOcode)
+    
+    def getRunWaysAsDict(self, runwaysDatabase):
+        assert isinstance(runwaysDatabase, RunWayDataBase) and not(runwaysDatabase is None)
+        return runwaysDatabase.getRunWaysAsDict(self.ICAOcode)
+    
+    def getRunWays(self, runwaysDatabase):
+        assert isinstance(runwaysDatabase, RunWayDataBase) and not(runwaysDatabase is None)
+        return runwaysDatabase.getRunWays(self.ICAOcode)
+    
     def dump(self):
         WayPoint.dump(self)
         print "airport field Elevation above Sea Level Meters=",self.fieldElevationAboveSeaLevelMeters, " meters"
@@ -197,7 +219,6 @@ class Airport(WayPoint):
 
 
 class Test_WayPoint(unittest.TestCase):
-
 
     def test_WayPoint(self):
     
@@ -233,7 +254,33 @@ class Test_WayPoint(unittest.TestCase):
         TopOfDescent = Orly.getWayPointAtDistanceBearing('TopOfDescent', distanceMeters, bearingDegrees)
         TopOfDescent.dump()
         
-    
+
+    def test_Airport(self):
+
+        print "=========== Airport  =========== " + time.strftime("%c")
+
+        airportICAOcode = 'LFPG'
+        CharlesDeGaulle = Airport(Name = 'CharlesDeGaulle',
+                                ICAOcode = airportICAOcode,
+                                Country = 'France')
+        self.assertTrue( not(CharlesDeGaulle is None) )
+        
+        runWaysDatabase = RunWayDataBase()
+        self.assertTrue( runWaysDatabase.read() , 'run ways DB read correctly')
+        
+        self.assertTrue( CharlesDeGaulle.hasRunWays(runWaysDatabase) )
+        print 'airport= {0} has run-ways= {1}'.format(CharlesDeGaulle, CharlesDeGaulle.hasRunWays(runWaysDatabase))
+        
+        print "=========== Airport run ways ONE =========== " + time.strftime("%c")
+
+        for runway in CharlesDeGaulle.getRunWaysAsDict(runWaysDatabase):
+            print runway
+            
+        print "=========== Airport run ways TWO =========== " + time.strftime("%c")
+
+        for runway in CharlesDeGaulle.getRunWays(runWaysDatabase):
+            print runway
+
 
 if __name__ == '__main__':
     unittest.main()
