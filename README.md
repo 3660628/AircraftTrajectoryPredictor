@@ -16,3 +16,8 @@ This software needs :
 
 See some explanations about this software (in french):<br>
 http://trajectoire-predict.monsite-orange.fr/
+
+Limitations : 
+1) only flights with departure and arrival airports are manage, hence inbounds or outbounds not yet implemented
+2) the arrival and the departure airport needs to have each a runway defined in the runways database
+
