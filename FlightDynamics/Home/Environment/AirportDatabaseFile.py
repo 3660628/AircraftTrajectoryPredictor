@@ -46,7 +46,9 @@ DST     Daylight savings time. One of E (Europe), A (US/Canada), S (South Americ
 
 The data is ISO 8859-1 (Latin-1) encoded, with no special characters.
 
-Note: Rules for daylight savings time change from year to year and from country to country. The current data is an approximation for 2009, built on a country level. Most airports in DST-less regions in countries that generally observe DST (eg. AL, HI in the USA, NT, QL in Australia, parts of Canada) are marked incorrectly.
+Note: Rules for daylight savings time change from year to year and from country to country. 
+The current data is an approximation for 2009, built on a country level. 
+Most airports in DST-less regions in countries that generally observe DST (eg. AL, HI in the USA, NT, QL in Australia, parts of Canada) are marked incorrectly.
 Sample entries
 
 507,"Heathrow","London","United Kingdom","LHR","EGLL",51.4775,-0.461389,83,0,"E"
@@ -55,12 +57,9 @@ Sample entries
 
 '''
 import os
-import time
 import csv
-import unittest
 
 from Home.Guidance.WayPointFile import Airport
-from Home.OutputFiles.KmlOutput import KmlOutput
 
 fieldNames = ["Airport ID", "Airport Name" , "City", "Country", "IATA/FAA", "ICAO Code",
                 "LatitudeDegrees", "LongitudeDegrees", "AltitudeFeet", "TimeZone", "DST"]
@@ -111,7 +110,7 @@ class AirportsDatabase(object):
             
     def getAirportsFromCountry(self, Country = ''):
         for row in self.airportsDb.itervalues():
-            if row['Country'] == Country :
+            if row['Country'] == Country and len(row['ICAO Code'])>0 :
                 airport = Airport(
                                 Name=row['City']+'-'+row['Airport Name'] ,
                                 LatitudeDegrees = row['LatitudeDegrees'] , 
@@ -124,13 +123,15 @@ class AirportsDatabase(object):
             
     def getAirports(self):
         for row in self.airportsDb.itervalues():
-            airport = Airport(
-                                Name = row['City']+'-'+row['Airport Name'] ,
-                                LatitudeDegrees = row['LatitudeDegrees'] , 
-                                LongitudeDegrees = row['LongitudeDegrees'] , 
-                                fieldElevationAboveSeaLevelMeters = float(row['AltitudeFeet'])*feetToMeters,
-                                ICAOcode = row['ICAO Code'] )
-            yield airport
+            if len(row['ICAO Code'])>0 and len(row['Country'])>0:
+                airport = Airport(
+                                    Name = row['City']+'-'+row['Airport Name'] ,
+                                    LatitudeDegrees = row['LatitudeDegrees'] , 
+                                    LongitudeDegrees = row['LongitudeDegrees'] , 
+                                    fieldElevationAboveSeaLevelMeters = float(row['AltitudeFeet'])*feetToMeters,
+                                    ICAOcode = row['ICAO Code'] ,
+                                    Country = row['Country'] )
+                yield airport
     
     def dump(self):
         if self.airportsDb is None: return
@@ -183,78 +184,3 @@ class AirportsDatabase(object):
 
         
 
-class Test_Main(unittest.TestCase):
-
-    def test_create_Country_Airports_KML(self):
-        
-        
-        airportsDb = AirportsDatabase()
-        self.assertTrue (airportsDb.read())
-        country = 'France'
-        
-        fileName =  country + '_Airports.kml'
-        kmlOutputFile = KmlOutput(fileName=fileName)
-
-        for airport in airportsDb.getAirportsFromCountry( Country = country):
-            airportName = str(airport.getName()).decode("ascii", "ignore")
-            kmlOutputFile.write(name = airportName, 
-                                LongitudeDegrees = airport.getLongitudeDegrees(),
-                                LatitudeDegrees = airport.getLatitudeDegrees(),
-                                AltitudeAboveSeaLevelMeters = airport.getAltitudeMeanSeaLevelMeters())
-        kmlOutputFile.close()
-
-
-    def test_get_countries(self):
-        
-        airportsDb = AirportsDatabase()
-        self.assertTrue (airportsDb.read())
-        for country in airportsDb.getCountries():
-            print country
-        
-        
-    def test_main(self):
-    
-        t0 = time.clock()
-        print ' ========== AirportsDatabase testing ======= '
-        airportsDb = AirportsDatabase()
-        ret = airportsDb.read()
-        self.assertTrue (ret)
-        t1 = time.clock()
-        print t1-t0
-        
-        print ' ========== AirportsDatabase testing ======= '
-    
-        airportsDb.dumpCountry(Country="France")
-        print "number of airports= ", airportsDb.getNumberOfAirports()
-        
-        print ' ========== AirportsDatabase testing ======= '
-    
-        for ap in ['Orly', 'paris', 'toulouse', 'marseille' , 'roissy', 'blagnac' , 'provence' , 'de gaulle']:
-            print "ICAO Code of= ", ap, " ICAO code= ", airportsDb.getICAOCode(ap)
-        
-        t2 = time.clock()
-        print t2-t1
-        print ' ========== AirportsDatabase testing ======= '
-        CharlesDeGaulleRoissy = airportsDb.getAirportFromICAOCode('LFPG')
-        print CharlesDeGaulleRoissy
-        
-        print ' ========== AirportsDatabase testing ======= '
-        MarseilleMarignane = airportsDb.getAirportFromICAOCode('LFML')
-        print MarseilleMarignane
-        
-        print ' ========== AirportsDatabase testing ======= '
-        Lisbonne = airportsDb.getAirportFromICAOCode('LPPT')
-        print Lisbonne
-            
-        print ' ========== AirportsDatabase testing ======= '
-        JohnFKennedy = airportsDb.getAirportFromICAOCode('KJFK')
-        self.assertTrue( isinstance( JohnFKennedy, Airport))
-        
-        print ' ========== AirportsDatabase testing ======= '
-        LosAngeles = airportsDb.getAirportFromICAOCode('KLAX')
-        print LosAngeles
-        
-        self.assertTrue(True)
-        
-if __name__ == '__main__':
-    unittest.main()

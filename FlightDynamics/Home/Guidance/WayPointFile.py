@@ -151,6 +151,7 @@ class WayPoint(object):
         if self.isTopOfDescent==True:
             print "way Point is Top Of Descent !!! "
 
+
 class Airport(WayPoint):
     
     fieldElevationAboveSeaLevelMeters = 0.0

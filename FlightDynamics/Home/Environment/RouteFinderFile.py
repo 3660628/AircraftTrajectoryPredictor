@@ -115,6 +115,7 @@ class RouteFinder(object):
                     'nats':'',
                     'k':235644007           } 
         data = urllib.urlencode(values)
+        ''' use the script to retrieve a route '''
         response = urllib2.urlopen(url = self.script_url, data= data)
         
         #print 'encoding = {0}'.format(response.headers.getparam('charset'))
