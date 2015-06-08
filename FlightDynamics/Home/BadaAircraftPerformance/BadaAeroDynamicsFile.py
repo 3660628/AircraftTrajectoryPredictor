@@ -135,5 +135,33 @@ class Test_Class(unittest.TestCase):
 
             print 'Wing Area Surface={0} Square-meters'.format(aeroDynamics.getWingAreaSurfaceSquareMeters())
         
+        
+    def test_Class_Two(self):
+            
+        print '================ test Two ===================='
+        acBd = BadaAircraftDatabase()
+        assert acBd.read()
+        
+        atmosphere = Atmosphere()
+        earth = Earth()
+        
+        aircraftICAOcode = 'A320'
+        if ( acBd.aircraftExists(aircraftICAOcode) and
+             acBd.aircraftPerformanceFileExists(aircraftICAOcode)):
+            
+            print acBd.getAircraftFullName(aircraftICAOcode)
+            
+            aircraftPerformance = AircraftPerformance(acBd.getAircraftPerformanceFile(aircraftICAOcode))
+            aeroDynamics = AeroDynamics(aircraftPerformance, atmosphere, earth)
+            
+            print aeroDynamics
+            phase = 'XX'
+            try:
+                print aeroDynamics.getDragCoeff(phase)
+            except Exception as e: 
+                print 'test two = {0}'.format(e)
+                self.assertTrue(isinstance(e, AssertionError))
+            
+            
 if __name__ == '__main__':
     unittest.main()

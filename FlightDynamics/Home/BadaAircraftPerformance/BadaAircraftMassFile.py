@@ -23,9 +23,9 @@
         You should have received a copy of the GNU General Public License
         along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
-
+import unittest
 from Home.BadaAircraftPerformance.BadaAircraftPerformanceFile import AircraftPerformance
-
+from Home.BadaAircraftPerformance.BadaAircraftDatabaseFile import BadaAircraftDatabase
 
 Kilogram2Pounds = 2.20462262 # 1 kilogram = 2.204 lbs
 
@@ -47,6 +47,7 @@ class AircraftMass(object):
     initialMassKilograms = 0.0
     
     def __init__(self, aircraftPerformance):
+        
         assert isinstance(aircraftPerformance, AircraftPerformance)
         self.className = self.__class__.__name__
         self.referenceMassKilograms = aircraftPerformance.getReferenceMassTons()*1000.
@@ -121,3 +122,24 @@ class AircraftMass(object):
         print self.className + ': aircraft maximum mass= {0:.2f} kilograms'.format(self.maximumMassKilograms)
         print self.className + ': aircraft maximum pay load mass= {0:.2f} kilograms'.format(self.maximumPayLoadMassKilograms)
         
+        
+class Test_Class(unittest.TestCase):
+
+    def test_Class_One(self):
+            
+        print '================ test one ===================='
+        acBd = BadaAircraftDatabase()
+        assert acBd.read()
+        
+        
+        aircraftICAOcode = 'A320'
+        if ( acBd.aircraftExists(aircraftICAOcode) and
+             acBd.aircraftPerformanceFileExists(aircraftICAOcode)):
+            
+            print acBd.getAircraftFullName(aircraftICAOcode)
+            
+            aircraftPerformance = AircraftPerformance(acBd.getAircraftPerformanceFile(aircraftICAOcode))
+            aircraftMass = AircraftMass(aircraftPerformance)
+            
+if __name__ == '__main__':
+    unittest.main() 
