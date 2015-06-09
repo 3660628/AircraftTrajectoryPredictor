@@ -24,12 +24,15 @@ Created on 26 mars 2015
         along with this program.  If not, see <http://www.gnu.org/licenses/>.
         
 '''
+import unittest
 
 from Home.BadaAircraftPerformance.BadaAircraftPerformanceFile import AircraftPerformance
 from Home.BadaAircraftPerformance.BadaAeroDynamicsFile import AeroDynamics
 from Home.BadaAircraftPerformance.BadaAircraftStateVectorFile import StateVector
+from Home.BadaAircraftPerformance.BadaAircraftDatabaseFile import BadaAircraftDatabase
 
 from Home.Environment.Atmosphere import Atmosphere
+from Home.Environment.Earth import Earth
 
 Meter2Feet = 3.2808
 Feet2Meter = 0.3048
@@ -167,6 +170,11 @@ class FlightEnvelope(AeroDynamics):
         print self.className + ': Max Operational Mach Number= ' + str(self.MaxOpMachNumber)
         print self.className + ': Max Operational Altitude= ' + str(self.MaxOpAltitudeFeet) + ' feet'
         
+    def __str__(self):
+        strMsg = self.className + ': VMO CAS= {0} knots'.format(self.MaxOpSpeedCasKnots)
+        strMsg += ' - Max Operational Mach Number= {0}'.format(self.MaxOpMachNumber)
+        strMsg += ' - Max Operational Altitude= {0} feet'.format(self.MaxOpAltitudeFeet)
+        return strMsg
         
     def getMaxAltitudeMslMtowFeet(self):
         return self.MaxOpAltitudeFeet
@@ -263,3 +271,33 @@ class FlightEnvelope(AeroDynamics):
     
     def getFlightPathAngleDegrees(self):
         return self.StateVector.getFlightPathAngleDegrees()
+
+
+class Test_Class(unittest.TestCase):
+
+    def test_Class_One(self):
+        
+        print '================ test one ===================='
+        acBd = BadaAircraftDatabase()
+        assert acBd.read()
+        
+        atmosphere = Atmosphere()
+        earth = Earth()
+        
+        aircraftICAOcode = 'A320'
+        if ( acBd.aircraftExists(aircraftICAOcode) and
+             acBd.aircraftPerformanceFileExists(aircraftICAOcode)):
+            
+            print acBd.getAircraftFullName(aircraftICAOcode)
+            
+            aircraftPerformance = AircraftPerformance(acBd.getAircraftPerformanceFile(aircraftICAOcode))
+            flightEnvelope = FlightEnvelope(aircraftPerformance = aircraftPerformance,
+                                            ICAOcode = aircraftICAOcode,
+                                            atmosphere = atmosphere,
+                                            earth = earth)
+            print flightEnvelope
+        
+        
+        
+if __name__ == '__main__':
+    unittest.main() 
