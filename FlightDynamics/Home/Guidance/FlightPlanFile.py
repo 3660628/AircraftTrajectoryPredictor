@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 
 '''
 Created on 25 janvier 2015
@@ -42,9 +43,12 @@ from Home.Environment.WayPointsDatabaseFile import WayPointsDatabase
 from Home.Environment.AirportDatabaseFile import AirportsDatabase
 
 from Home.Environment.RunWaysDatabaseFile import RunWayDataBase
-from Home.Guidance.WayPointFile import WayPoint
+from Home.Guidance.WayPointFile import WayPoint, Airport
+
+from Home.Guidance.ConstraintsFile import SpeedConstraint, LevelConstraint
 
 Meter2NauticalMiles = 0.000539956803 # nautical miles
+Knots2MetersSeconds = 0.514444444 # meters / second
 
 class FlightPlan(object):
     
@@ -62,6 +66,7 @@ class FlightPlan(object):
         self.className = self.__class__.__name__
 
         assert isinstance(strRoute, (str, unicode))
+        print self.className + ': route= ' + strRoute
         self.strRoute = strRoute
         self.fixList = []
         self.wayPointsDict = {}
@@ -78,6 +83,126 @@ class FlightPlan(object):
     
     def getDepartureAirport(self):
         return self.departureAirport
+
+
+    def analyseConstraint(self, fixIndex , fix):
+        
+        '''
+        N suivi de 4 chiffres pour la vitesse propre (TAS) en noeuds (exemple : N0450),
+        M suivi de 3 chiffres pour une vitesse exprimée en nombre de Mach (exemple : M078).
+        '''
+        '''
+        F suivi de 3 chiffres : niveau de vol (exemple : F080),
+        A suivi de 3 chiffres : altitude en centaines de pieds (exemple : A100 pour 10 000 ft),
+        '''
+        constraintFound = False
+        speedConstraint = None
+        levelConstraint = None
+        if str(fix).startswith('N'):
+            ''' may be a speed constraint '''
+            speedKnots = str(fix[1:])
+            if str(speedKnots).isdigit():
+                ''' if rest of the string is digit then there are no level constraint '''
+                #speedConstraint = SpeedConstraint(speedKnots * Knots2MetersSeconds)
+                print self.className + ' speed constraint expressed as Knots= {0}'.format(speedKnots)
+                speedConstraint = SpeedConstraint ( fixIndex = fixIndex , 
+                                                    speed = speedKnots ,
+                                                    units = 'knots')
+                constraintFound = True
+                        
+            else:
+                ''' rest of the string is not composed only of digits '''
+                subString = str(fix[1:])
+                ''' may contain a level constraint '''
+                indexOfLevelConstraint = str(subString).find('F')
+                if indexOfLevelConstraint >= 0:
+                    ''' there is level constraint '''
+                    speedKnots = str(subString[0:indexOfLevelConstraint])
+                    if str(speedKnots).isdigit():
+                        print self.className + ' speed constraint= {0} knots'.format(speedKnots)
+                        speedConstraint = SpeedConstraint(fixIndex = fixIndex , 
+                                                          speed = speedKnots ,
+                                                          units = 'knots')
+                        constraintFound = True
+                        levelFlightLevel = str(subString[indexOfLevelConstraint:])
+                        print self.className + ' level constraint= {0}'.format(levelFlightLevel)
+                        levelConstraint = LevelConstraint ( fixIndex = fixIndex,
+                                                            level = str(levelFlightLevel[1:]),
+                                                            units = 'FL')
+                    else:
+                        ''' did found an N ... and a F => but in the middle there are not digits '''
+                        constraintFound = False
+                        
+                else:
+                    ''' did found an N but no F .. now searching for A '''
+                    indexOfLevelConstraint = str(subString).find('A')
+                    if indexOfLevelConstraint >= 0:
+                        ''' there is probably a level constraint '''
+                        speedKnots = str(subString[1:indexOfLevelConstraint])
+                        if str(speedKnots).isdigit():
+                            print self.className + ' speed constraint= {0} knots'.format(speedKnots)
+                            speedConstraint = SpeedConstraint(fixIndex = fixIndex , 
+                                                              speed = speedKnots ,
+                                                              units = 'knots')
+                            constraintFound = True
+
+                            levelAltitudeFeet = str(subString[indexOfLevelConstraint:])
+                            print self.className + ': level constraint= {0}'.format(levelAltitudeFeet)
+                    else:
+                        ''' found an N, rest of the string are not digits but do not found neither a F nor a A => not a constraint '''
+                        constraintFound = False
+                        
+                        
+        elif str(fix).startswith('M'):
+            speedMach = str(fix[1:])
+            if str(speedMach).isdigit():
+                ''' the rest of the string is composed only of digits => no other constraints '''
+                print self.className + ' speed constraint expressed as Mach= {0}'.format(speedMach)
+                speedConstraint = SpeedConstraint ( fixIndex = fixIndex,
+                                                    speed = speedMach,
+                                                    units = 'mach')
+                constraintFound = True
+                
+            else:
+                ''' rest of the fix after M is not composed only of digits '''
+                subString = str(fix[1:])
+                ''' check if there is a level constraint '''
+                indexOfLevelConstraint = str(subString).find('F')
+                if indexOfLevelConstraint >= 0:
+                    ''' there is level constraint '''
+                    speedKnots = str(subString[1:indexOfLevelConstraint])
+                    if str(speedKnots).isdigit():
+                        print self.className + ' speed constraint= {0} knots'.format(speedKnots)
+                        speedConstraint = SpeedConstraint ( fixIndex = fixIndex,
+                                                            speed = speedKnots,
+                                                            units = 'knots')
+                        
+                        levelFlightLevel = str(subString[indexOfLevelConstraint:])
+                        print self.className + ' level constraint= {0}'.format(levelFlightLevel)
+                        levelConstraint = LevelConstraint( fixIndex = fixIndex,
+                                                           level = levelFlightLevel,
+                                                           units = 'FL')
+                        constraintFound = True
+ 
+                else:
+                    indexOfLevelConstraint = str(subString).find('A')
+                    if indexOfLevelConstraint >= 0:
+                        speedMach = subString[:indexOfLevelConstraint]
+                        ''' there is probably a level constraint '''
+                        levelAltitudeFeet = str(subString[indexOfLevelConstraint+1:])
+                        if str(levelAltitudeFeet).isdigit() and str(speedMach).isdigit():
+                            speedConstraint = SpeedConstraint ( fixIndex = fixIndex,
+                                                            speed = speedMach,
+                                                            units = 'mach')
+                            print self.className + ': level constraint= {0}'.format(levelAltitudeFeet)
+                            levelConstraint = LevelConstraint ( fixIndex = fixIndex ,
+                                                                level = levelAltitudeFeet,
+                                                                units = 'feet')
+                            constraintFound = True
+                    else:
+                        constraintFound = False
+                        
+        return constraintFound, levelConstraint, speedConstraint
 
 
     def buildFixList(self):
@@ -101,48 +226,59 @@ class FlightPlan(object):
         for fix in self.strRoute.split('-'):
             fix = str(fix).strip()
             ''' first item is the Departure Airport '''
-            if index == 0 and str(fix).startswith('ADEP'):
-                ''' ADEP is the first fix of the route '''
-                if len(str(fix).split('/')) >= 2:
-                    self.departureAirportIcaoCode = str(fix).split('/')[1]
-                    self.departureAirport = airportsDb.getAirportFromICAOCode(ICAOcode = self.departureAirportIcaoCode)
-                    print self.className + ': departure airport= ' + str(self.departureAirport)
+            if str(fix).startswith('ADEP'):
+                ''' fix is the departure airport '''
+                if index == 0:
+                    ''' ADEP is the first fix of the route '''
+                    if len(str(fix).split('/')) >= 2:
+                        self.departureAirportIcaoCode = str(fix).split('/')[1]
+                        self.departureAirport = airportsDb.getAirportFromICAOCode(ICAOcode = self.departureAirportIcaoCode)
+                        print self.className + ': departure airport= {0}'.format( self.departureAirport)
+    
+                    self.departureRunwayName = ''
+                    if len(str(fix).split('/')) >= 3:
+                        self.departureRunwayName = str(fix).split('/')[2]
+                        
+                    if not(self.departureAirport is None):
+                        self.departureRunway = runwaysDb.getFilteredRunWays(airportICAOcode = self.departureAirportIcaoCode, 
+                                                                            runwayName = self.departureRunwayName)
+                        print self.className + ': departure runway= {0}'.format(self.departureRunway)
+                else:
+                    raise ValueError (self.className + ': ADEP must be the first fix in the route!!!')
 
-                self.departureRunwayName = ''
-                if len(str(fix).split('/')) >= 3:
-                    self.departureRunwayName = str(fix).split('/')[2]
+                
+            elif  str(fix).startswith('ADES'):
+                if index == (len(self.strRoute.split('-'))-1):
+                    ''' ADES is the last fix of the route '''
+                    if len(str(fix).split('/')) >= 2:
+                        self.arrivalAirportIcaoCode = str(fix).split('/')[1]
+                        self.arrivalAirport = airportsDb.getAirportFromICAOCode(ICAOcode = self.arrivalAirportIcaoCode)
+                        print self.className + ': arrival airport= {0}'.format( self.arrivalAirport)
                     
-                if not(self.departureAirport is None):
-                    self.departureRunway = runwaysDb.getFilteredRunWays(airportICAOcode = self.departureAirportIcaoCode, 
-                                                                        runwayName = self.departureRunwayName)
-                    print self.className + ': departure runway= {0}'.format(self.departureRunway)
-                
-            elif index == (len(self.strRoute.split('-'))-1) and str(fix).startswith('ADES'):
-                ''' ADES is the last fix of the route '''
-                if len(str(fix).split('/')) >= 2:
-                    self.arrivalAirportIcaoCode = str(fix).split('/')[1]
-                    self.arrivalAirport = airportsDb.getAirportFromICAOCode(ICAOcode = self.arrivalAirportIcaoCode)
-                    print self.className + ': arrival airport= ' + str(self.arrivalAirport)
-                
-                self.arrivalRunwayName = ''
-                if len(str(fix).split('/')) >= 3:
-                    self.arrivalRunwayName = str(fix).split('/')[2]
-                
-                if not(self.arrivalAirport is None):
-                    self.arrivalRunway =  runwaysDb.getFilteredRunWays(airportICAOcode = self.arrivalAirportIcaoCode, 
-                                                                       runwayName = self.arrivalRunwayName)
-                    print self.className + ': arrival runway= {0}'.format(self.arrivalRunway)
+                    self.arrivalRunwayName = ''
+                    if len(str(fix).split('/')) >= 3:
+                        self.arrivalRunwayName = str(fix).split('/')[2]
+                    
+                    if not(self.arrivalAirport is None):
+                        self.arrivalRunway =  runwaysDb.getFilteredRunWays(airportICAOcode = self.arrivalAirportIcaoCode, 
+                                                                           runwayName = self.arrivalRunwayName)
+                        print self.className + ': arrival runway= {0}'.format(self.arrivalRunway)
+                else:
+                    raise ValueError (self.classeName + ': ADES must be the last fix of the route!!!' )
 
             else:
                 ''' do not take the 1st one (ADEP) and the last one (ADES) '''
-                self.fixList.append(fix)
-                wayPoint = wayPointsDb.getWayPoint(fix)
-                if not(wayPoint is None):
-                    #print wayPoint
-                    self.wayPointsDict[fix] = wayPoint
-                else:
-                    ''' do not insert way point names when there is no known latitude - longitude '''
-                    self.fixList.pop()
+                constraintFound, levelConstraint, speedConstraint = self.analyseConstraint(index, fix)
+                #print self.className + ': constraint found= {0}'.format(constraintFound)
+                if constraintFound == False:
+                    self.fixList.append(fix)
+                    wayPoint = wayPointsDb.getWayPoint(fix)
+                    if not(wayPoint is None):
+                        #print wayPoint
+                        self.wayPointsDict[fix] = wayPoint
+                    else:
+                        ''' do not insert way point names when there is no known latitude - longitude '''
+                        self.fixList.pop()
                 
             index += 1             
         #print self.className + ': fix list= ' + str(self.fixList)
@@ -151,7 +287,7 @@ class FlightPlan(object):
         
     def insert(self, position, wayPoint):
         ''' 
-        insert a waypoint is the list and add the waypoint to the flight plan dictionnary 
+        insert a waypoint is the list and add the way-point to the flight plan dictionary 
         '''
         assert (isinstance(wayPoint, WayPoint))
 
@@ -369,7 +505,8 @@ class FlightPlan(object):
                     lengthMeters += self.departureAirport.getDistanceMetersTo(self.arrivalAirport)
             
         return lengthMeters 
-    
+
+  
     def computeDistanceToLastFixMeters(self, currentPosition, fixListIndex):
         '''
         compute length to fly from the provided index in the fix list
@@ -407,23 +544,20 @@ class FlightPlan(object):
     
 class Test_Flight_Plan(unittest.TestCase):
 
-    def test_main(self):
-
-
+    def test_main_one(self):
         
         print "=========== Flight Plan start  =========== " 
         
         strRoute = 'ADEP/LFBO-TOU-ALIVA-TOU37-FISTO-LMG-PD01-PD02-AMB-AMB01-AMB02-PD03-PD04-OLW11-OLW83-ADES/LFPO'
         flightPlan = FlightPlan(strRoute)
     
-        print 'is over flight= {0}'.format(flightPlan.isOverFlight())
-        print 'is domestic= ' + str(flightPlan.isDomestic())
-        print 'is in Bound= ' + str(flightPlan.isInBound())
-        print 'is out Bound= ' + str(flightPlan.isOutBound())
-        print 'all angles > 90.0 degrees= ' + str(flightPlan.allAnglesLessThan90degrees())
+        self.assertFalse(flightPlan.isOverFlight())
+        self.assertTrue (flightPlan.isDomestic())
+        self.assertFalse(flightPlan.isInBound())
+        self.assertFalse(flightPlan.isOutBound())
+        print 'all angles < 90.0 degrees= ' + str(flightPlan.allAnglesLessThan90degrees())
         print 'flight path length= ' + str(flightPlan.computeLengthNauticalMiles()) + ' nautical miles'
     
-        print "=========== Flight Plan start  =========== " 
     
     #     fixListIndex = 0
     #     print 'length from index={0} - length= {1} meters'.format(fixListIndex, 
@@ -433,10 +567,20 @@ class Test_Flight_Plan(unittest.TestCase):
     #     fixListIndex = 1
     #     print 'length from index={0} - length= {1} meters'.format(fixListIndex, 
     #                                                               flightPlan.computeStillToFlyMeters(fixListIndex = 0))
-    #     
-        print flightPlan.getDepartureAirport()
-        print flightPlan.getArrivalAirport()
     
+    def test_main_two(self):
+        
+        print "=========== Flight Plan start  =========== " 
+
+        strRoute = 'ADEP/LFBO-TOU-ALIVA-TOU37-FISTO-LMG-PD01-PD02-AMB-AMB01-AMB02-PD03-PD04-OLW11-OLW83-ADES/LFPO'
+        flightPlan = FlightPlan(strRoute)
+        
+        self.assertTrue ( isinstance( flightPlan.getDepartureAirport(), Airport) )
+        self.assertTrue ( isinstance( flightPlan.getArrivalAirport() , Airport) )
+                          
+                          
+    def test_main_three(self):
+
         print "=========== Flight Plan start  =========== " 
         
         strRoute = 'TOU-ALIVA-TOU37-FISTO-LMG-PD01-PD02-AMB-AMB01-AMB02-PD03-PD04-OLW11-OLW83-ADES/LFPO'
@@ -446,10 +590,11 @@ class Test_Flight_Plan(unittest.TestCase):
         print 'is domestic= ' + str(flightPlan.isDomestic())
         print 'is in Bound= ' + str(flightPlan.isInBound())
         print 'is out Bound= ' + str(flightPlan.isOutBound())
-        print 'all angles > 90.0 degrees= ' + str(flightPlan.allAnglesLessThan90degrees())
+        print 'all angles < 90.0 degrees= ' + str(flightPlan.allAnglesLessThan90degrees())
         print 'flight path length= ' + str(flightPlan.computeLengthNauticalMiles()) + ' nautical miles'
     
-    
+    def test_main_four(self):
+
         print "=========== Flight Plan start  =========== " 
         
         strRoute = 'ADEP/LFBO-TOU-ALIVA-TOU37-FISTO-LMG-PD01-PD02-AMB-AMB01-AMB02-PD03-PD04-OLW11-OLW83'
@@ -459,10 +604,11 @@ class Test_Flight_Plan(unittest.TestCase):
         print 'is domestic= ' + str(flightPlan.isDomestic())
         print 'is in Bound= ' + str(flightPlan.isInBound())
         print 'is out Bound= ' + str(flightPlan.isOutBound())
-        print 'all angles > 90.0 degrees= ' + str(flightPlan.allAnglesLessThan90degrees())
+        print 'all angles < 90.0 degrees= ' + str(flightPlan.allAnglesLessThan90degrees())
         print 'flight path length= ' + str(flightPlan.computeLengthNauticalMiles()) + ' nautical miles'
     
-    
+    def test_main_five(self):
+
         print "=========== Flight Plan start  =========== " 
         
         strRoute = 'TOU-ALIVA-TOU37-FISTO-LMG-PD01-PD02-AMB-AMB01-AMB02-PD03-PD04-OLW11-OLW83'
@@ -474,14 +620,17 @@ class Test_Flight_Plan(unittest.TestCase):
         print 'is out Bound= ' + str(flightPlan.isOutBound())
         print 'flight path length= ' + str(flightPlan.computeLengthNauticalMiles()) + ' nautical miles'
         
+    def test_main_six(self):
+        
+        print "=========== Flight Plan start  =========== " 
+
         strRoute = 'ADEP/SBGL-ALDEIA-NIKDO-MACAE-GIKPO-MABSI-VITORIA-GIDOD-'
         strRoute += 'ISILA-POSGA-SEGURO-BIDEV-NAXOV-IRUMI-ESLIB-MEDIT-RUBEN-KIBEG-'
         strRoute += 'AMBET-VUKSU-NORONHA-UTRAM-MEDAL-NAMBI-RAKUD-IRAVU-MOGNI-ONOBI-CABRAL-'
         strRoute += 'IPERA-ISOKA-LIMAL-UDATI-ODEGI-LOMAS-CANARIA-VASTO-SULAM-DIMSA-ATLUX-'
         strRoute += 'SUNID-AKUDA-OBOLO-PESAS-EKRIS-LUSEM-LULUT-BORDEAUX-COGNAC-ADABI-BOKNO-'
         strRoute += 'DEVRO-VANAD-KOVAK-ADES/LFPG'
-    
-        print "=========== Flight Plan start  =========== " 
+
     
         flightPlan = FlightPlan(strRoute)
     
@@ -491,10 +640,17 @@ class Test_Flight_Plan(unittest.TestCase):
         print 'is out Bound= ' + str(flightPlan.isOutBound())
         print 'flight path length= ' + str(flightPlan.computeLengthNauticalMiles()) + ' nautical miles'
         
+    def test_main_seven(self):
+
         print "=========== Flight Plan start  =========== " 
+        
         strRoute = 'ADEP/SBGL-ALDEIA-NIKDO-MACAE'
         flightPlan = FlightPlan(strRoute)
-    
+        
+        print 'flight path length= ' + str(flightPlan.computeLengthNauticalMiles()) + ' nautical miles'
+
+    def test_main_eight(self):
+
         print "=========== Flight Plan start  =========== " 
     
         strRoute = 'ADEP/LFBM/27-'
@@ -505,6 +661,57 @@ class Test_Flight_Plan(unittest.TestCase):
         flightPlan = FlightPlan(strRoute)
         
         print 'flight path length= ' + str(flightPlan.computeLengthNauticalMiles()) + ' nautical miles'
+    
+    def test_main_nine(self):
+        
+        print "=========== Test Speed and Level constraints  =========== " 
+        
+        ''' N suivi de 4 chiffres pour la vitesse propre (TAS) en nœuds (exemple : N0450), '''
+        strRoute = 'ADEP/LFBO-TOU-ALIVA-N0450-FISTO-LMG-PD01-PD02-AMB-AMB01-AMB02-PD03-PD04-OLW11-OLW83-ADES/LFPO'
+        flightPlan = FlightPlan(strRoute)
+        print flightPlan
+        
+    def test_main_ten(self):
+
+        print "=========== Test Speed and Level constraints  =========== " 
+
+        ''' M suivi de 3 chiffres pour une vitesse exprimée en nombre de Mach (exemple : M078). '''
+        strRoute = 'ADEP/LFBO-TOU-ALIVA-FISTO-LMG-M078-PD02-AMB-AMB01-AMB02-PD03-PD04-OLW11-OLW83-ADES/LFPO'
+        flightPlan = FlightPlan(strRoute)
+        print flightPlan
+        
+    def test_main_eleven(self):
+        
+        print "=========== Test Speed and Level constraints  =========== " 
+
+        ''' F suivi de 3 chiffres : niveau de vol (exemple : F080) '''
+        strRoute = 'ADEP/LFBO-TOU-ALIVA-N0250F080-FISTO-LMG-PD01-PD02-AMB-AMB01-AMB02-PD03-PD04-OLW11-OLW83-ADES/LFPO'
+        flightPlan = FlightPlan(strRoute)
+        print flightPlan
+        
+        ''' A suivi de 3 chiffres : altitude en centaines de pieds (exemple : A100 pour 10 000 ft), '''
+
+    def test_main_twelve(self):
+        
+        print "=========== Test Speed and Level constraints  =========== " 
+
+        ''' F suivi de 3 chiffres : niveau de vol (exemple : F080) '''
+        strRoute = 'ADEP/LFBO-TOU-ALIVA-N0250F280-FISTO-LMG-MEDAL-OLW11-OLW83-ADES/LFPO'
+        flightPlan = FlightPlan(strRoute)
+        print flightPlan
+        
+        ''' A suivi de 3 chiffres : altitude en centaines de pieds (exemple : A100 pour 10 000 ft), '''
+        
+    def test_main_thirteen(self):
+        
+        print "=========== Test Speed and Level constraints  =========== " 
+
+        ''' F suivi de 3 chiffres : niveau de vol (exemple : F080) '''
+        strRoute = 'ADEP/LFBO-TOU-ALIVA-M082A100-FISTO-LMG-MEDAL-OLW11-OLW83-ADES/LFPO'
+        flightPlan = FlightPlan(strRoute)
+        print flightPlan
+        
+        ''' A suivi de 3 chiffres : altitude en centaines de pieds (exemple : A100 pour 10 000 ft), '''
     
 if __name__ == '__main__':
     unittest.main()
