@@ -21,3 +21,8 @@ Limitations : <br>
 1) only flights with departure and arrival airports are manage, hence inbounds or outbounds not yet implemented <br>
 2) the arrival and the departure airport needs to have each a runway defined in the runways database
 
+A typical flight plan reads as follows:<br>
+ADEP/LFST/23-POGOL-DANAR-RESPO-DIJON-PIBAT-MOULINS-KUKOR-LARON-GUERE-BEBIX-LIMOGES-ADES/LFBD/11<br>
+where ADEP is the departure airport and ADES the destination, 23 being the departure runway and 11 the arrival runway.
+
+
