@@ -1,7 +1,6 @@
 # AircraftTrajectoryPredictor
-Jet Aircraft Trajectory Prediction based upon BADA
 
-Aircraft trajectory prediction based upon BADA<br>
+Jet Aircraft trajectory prediction based upon BADA<br>
 https://www.eurocontrol.int/services/bada
 
 This software is written in Python 2.7.<br>
