@@ -14,6 +14,11 @@ Three kind of outputs are generated:
 <br>2) and two xlsx containing the vertical flight profile and the lateral profile.
 <br>
 
+<h2> Inputs - Data Inputs </h2>
+<br> 1) a Way Point database
+<br> 2) a Run Way database
+<br> 3) an Airport database
+
 <h2> Pre Requesites </h2>
 This software needs :
 <br>1) Numpy (http://www.numpy.org/)
