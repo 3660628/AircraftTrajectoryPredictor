@@ -50,10 +50,6 @@ class Test_Class(unittest.TestCase):
         t1 = time.clock()
         print "simulation time= {0} - simulation duration= {1:3.10f} seconds".format(t1 , (t1-t0))
     
-        print '==================== load airports ==================== '+ time.strftime("%c")
-        airportsDB = AirportsDatabase()
-        assert airportsDB.read()
-
         altitudeMeters = 10.0
         print 'air density= ' + str(atmosphere.getAirDensityKilogramsPerCubicMeters(altitudeMeters)) + ' kg / meters ^^ 3'
         
