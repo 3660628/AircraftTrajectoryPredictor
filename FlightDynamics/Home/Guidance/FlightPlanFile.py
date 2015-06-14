@@ -45,7 +45,7 @@ from Home.Environment.AirportDatabaseFile import AirportsDatabase
 from Home.Environment.RunWaysDatabaseFile import RunWayDataBase
 from Home.Guidance.WayPointFile import WayPoint, Airport
 
-from Home.Guidance.ConstraintsFile import SpeedConstraint, LevelConstraint
+from Home.Guidance.ConstraintsFile import analyseConstraint
 
 Meter2NauticalMiles = 0.000539956803 # nautical miles
 Knots2MetersSeconds = 0.514444444 # meters / second
@@ -70,8 +70,9 @@ class FlightPlan(object):
         self.strRoute = strRoute
         self.fixList = []
         self.wayPointsDict = {}
+        self.constraintsList = []
         self.buildFixList()
-        
+         
         
     def __str__(self):
         return self.className + ' fix list= ' + str(self.fixList)
@@ -85,124 +86,6 @@ class FlightPlan(object):
         return self.departureAirport
 
 
-    def analyseConstraint(self, fixIndex , fix):
-        
-        '''
-        N suivi de 4 chiffres pour la vitesse propre (TAS) en noeuds (exemple : N0450),
-        M suivi de 3 chiffres pour une vitesse exprimée en nombre de Mach (exemple : M078).
-        '''
-        '''
-        F suivi de 3 chiffres : niveau de vol (exemple : F080),
-        A suivi de 3 chiffres : altitude en centaines de pieds (exemple : A100 pour 10 000 ft),
-        '''
-        constraintFound = False
-        speedConstraint = None
-        levelConstraint = None
-        if str(fix).startswith('N'):
-            ''' may be a speed constraint '''
-            speedKnots = str(fix[1:])
-            if str(speedKnots).isdigit():
-                ''' if rest of the string is digit then there are no level constraint '''
-                #speedConstraint = SpeedConstraint(speedKnots * Knots2MetersSeconds)
-                print self.className + ' speed constraint expressed as Knots= {0}'.format(speedKnots)
-                speedConstraint = SpeedConstraint ( fixIndex = fixIndex , 
-                                                    speed = speedKnots ,
-                                                    units = 'knots')
-                constraintFound = True
-                        
-            else:
-                ''' rest of the string is not composed only of digits '''
-                subString = str(fix[1:])
-                ''' may contain a level constraint '''
-                indexOfLevelConstraint = str(subString).find('F')
-                if indexOfLevelConstraint >= 0:
-                    ''' there is level constraint '''
-                    speedKnots = str(subString[0:indexOfLevelConstraint])
-                    if str(speedKnots).isdigit():
-                        print self.className + ' speed constraint= {0} knots'.format(speedKnots)
-                        speedConstraint = SpeedConstraint(fixIndex = fixIndex , 
-                                                          speed = speedKnots ,
-                                                          units = 'knots')
-                        constraintFound = True
-                        levelFlightLevel = str(subString[indexOfLevelConstraint:])
-                        print self.className + ' level constraint= {0}'.format(levelFlightLevel)
-                        levelConstraint = LevelConstraint ( fixIndex = fixIndex,
-                                                            level = str(levelFlightLevel[1:]),
-                                                            units = 'FL')
-                    else:
-                        ''' did found an N ... and a F => but in the middle there are not digits '''
-                        constraintFound = False
-                        
-                else:
-                    ''' did found an N but no F .. now searching for A '''
-                    indexOfLevelConstraint = str(subString).find('A')
-                    if indexOfLevelConstraint >= 0:
-                        ''' there is probably a level constraint '''
-                        speedKnots = str(subString[1:indexOfLevelConstraint])
-                        if str(speedKnots).isdigit():
-                            print self.className + ' speed constraint= {0} knots'.format(speedKnots)
-                            speedConstraint = SpeedConstraint(fixIndex = fixIndex , 
-                                                              speed = speedKnots ,
-                                                              units = 'knots')
-                            constraintFound = True
-
-                            levelAltitudeFeet = str(subString[indexOfLevelConstraint:])
-                            print self.className + ': level constraint= {0}'.format(levelAltitudeFeet)
-                    else:
-                        ''' found an N, rest of the string are not digits but do not found neither a F nor a A => not a constraint '''
-                        constraintFound = False
-                        
-                        
-        elif str(fix).startswith('M'):
-            speedMach = str(fix[1:])
-            if str(speedMach).isdigit():
-                ''' the rest of the string is composed only of digits => no other constraints '''
-                print self.className + ' speed constraint expressed as Mach= {0}'.format(speedMach)
-                speedConstraint = SpeedConstraint ( fixIndex = fixIndex,
-                                                    speed = speedMach,
-                                                    units = 'mach')
-                constraintFound = True
-                
-            else:
-                ''' rest of the fix after M is not composed only of digits '''
-                subString = str(fix[1:])
-                ''' check if there is a level constraint '''
-                indexOfLevelConstraint = str(subString).find('F')
-                if indexOfLevelConstraint >= 0:
-                    ''' there is level constraint '''
-                    speedKnots = str(subString[1:indexOfLevelConstraint])
-                    if str(speedKnots).isdigit():
-                        print self.className + ' speed constraint= {0} knots'.format(speedKnots)
-                        speedConstraint = SpeedConstraint ( fixIndex = fixIndex,
-                                                            speed = speedKnots,
-                                                            units = 'knots')
-                        
-                        levelFlightLevel = str(subString[indexOfLevelConstraint:])
-                        print self.className + ' level constraint= {0}'.format(levelFlightLevel)
-                        levelConstraint = LevelConstraint( fixIndex = fixIndex,
-                                                           level = levelFlightLevel,
-                                                           units = 'FL')
-                        constraintFound = True
- 
-                else:
-                    indexOfLevelConstraint = str(subString).find('A')
-                    if indexOfLevelConstraint >= 0:
-                        speedMach = subString[:indexOfLevelConstraint]
-                        ''' there is probably a level constraint '''
-                        levelAltitudeFeet = str(subString[indexOfLevelConstraint+1:])
-                        if str(levelAltitudeFeet).isdigit() and str(speedMach).isdigit():
-                            speedConstraint = SpeedConstraint ( fixIndex = fixIndex,
-                                                            speed = speedMach,
-                                                            units = 'mach')
-                            print self.className + ': level constraint= {0}'.format(levelAltitudeFeet)
-                            levelConstraint = LevelConstraint ( fixIndex = fixIndex ,
-                                                                level = levelAltitudeFeet,
-                                                                units = 'feet')
-                            constraintFound = True
-                    else:
-                        constraintFound = False
-                        
-        return constraintFound, levelConstraint, speedConstraint
 
 
     def buildFixList(self):
@@ -268,9 +151,15 @@ class FlightPlan(object):
 
             else:
                 ''' do not take the 1st one (ADEP) and the last one (ADES) '''
-                constraintFound, levelConstraint, speedConstraint = self.analyseConstraint(index, fix)
+                constraintFound, levelConstraint, speedConstraint = analyseConstraint(index, fix)
                 #print self.className + ': constraint found= {0}'.format(constraintFound)
-                if constraintFound == False:
+                if constraintFound == True:
+                    constraint = {}
+                    constraint['fixIndex'] = index
+                    constraint['level'] = levelConstraint
+                    constraint['speed'] = speedConstraint
+                    self.constraintsList.append(constraint)
+                else:
                     self.fixList.append(fix)
                     wayPoint = wayPointsDb.getWayPoint(fix)
                     if not(wayPoint is None):
